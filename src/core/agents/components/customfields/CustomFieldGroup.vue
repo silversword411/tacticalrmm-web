@@ -1,5 +1,5 @@
 <template>
-  <q-card flat bordered class="q-mb-sm">
+  <q-card flat bordered class="q-mb-sm" :style="groupCardStyle">
     <CustomFieldGroupHeader
       :group="group"
       :is-edit-mode="isEditMode"
@@ -7,6 +7,7 @@
       @rename="(newName: string) => $emit('rename-group', group.id, newName)"
       @remove="$emit('remove-group', group.id)"
       @sort="(sortBy: FieldSortBy) => $emit('sort-fields', group.id, sortBy)"
+      @color-change="(colors: GroupColorPatch) => $emit('color-change', group.id, colors)"
     />
 
     <q-slide-transition>
@@ -33,6 +34,7 @@
                 @col-change="(span: GridColSpan) => $emit('field-col-change', group.id, element.fieldId, span)"
                 @display-name-change="(name: string | undefined) => $emit('display-name-change', group.id, element.fieldId, name)"
                 @mask-change="(masked: boolean) => $emit('mask-change', group.id, element.fieldId, masked)"
+                @field-color-change="(colors: FieldColorPatch) => $emit('field-color-change', group.id, element.fieldId, colors)"
               />
             </div>
           </template>
@@ -45,12 +47,14 @@
             :key="item.placement.fieldId"
             :class="`col-${item.placement.colSpan}`"
           >
-            <CustomField
-              :model-value="values[item.field.name]"
-              :field="item.field"
-              v-bind="viewFieldProps(item)"
-              @update:model-value="(val: unknown) => $emit('update:value', item.field.name, val)"
-            />
+            <div :style="fieldCardStyle(item.placement)" :class="{ 'field-color-wrap': hasFieldColors(item.placement) }">
+              <CustomField
+                :model-value="values[item.field.name]"
+                :field="item.field"
+                v-bind="viewFieldProps(item)"
+                @update:model-value="(val: unknown) => $emit('update:value', item.field.name, val)"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -59,11 +63,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
 import draggable from "vuedraggable";
 import CustomField from "src/core/dashboard/ui/CustomField.vue";
 import CustomFieldGridItem from "./CustomFieldGridItem.vue";
 import CustomFieldGroupHeader from "./CustomFieldGroupHeader.vue";
+import { lightenColor, getContrastTextColor } from "./colorUtils";
 import type { CustomField as CustomFieldType, CustomFieldValueField } from "src/core/settings/types";
 import type {
   CustomFieldGroupConfig,
@@ -71,6 +76,8 @@ import type {
   ResolvedFieldItem,
   GridColSpan,
   FieldSortBy,
+  GroupColorPatch,
+  FieldColorPatch,
 } from "./types";
 
 interface DraggableItem {
@@ -96,6 +103,8 @@ const emit = defineEmits<{
   "display-name-change": [groupId: string, fieldId: number, displayName: string | undefined];
   "mask-change": [groupId: string, fieldId: number, masked: boolean];
   "sort-fields": [groupId: string, sortBy: FieldSortBy];
+  "color-change": [groupId: string, colors: GroupColorPatch];
+  "field-color-change": [groupId: string, fieldId: number, colors: FieldColorPatch];
   "update:value": [fieldName: string, value: unknown];
 }>();
 
@@ -148,11 +157,78 @@ function getColSpan(fieldId: number): number {
   return allPlacementsMap.get(fieldId)?.colSpan ?? 12;
 }
 
+const groupCardStyle = computed(() => {
+  const style: Record<string, string> = {};
+  const g = props.group;
+
+  // Border = primaryColor
+  if (g.primaryColor) {
+    style.borderColor = g.primaryColor;
+  }
+
+  // Background: linked derives from primary, unlinked uses explicit value
+  const bgLinked = g.bgLinkedToPrimary !== false; // default true
+  let effectiveBg: string | undefined;
+  if (g.primaryColor && bgLinked) {
+    effectiveBg = lightenColor(g.primaryColor, g.bgLightness ?? 92, g.bgSaturation);
+  } else if (!bgLinked && g.backgroundColor) {
+    effectiveBg = g.backgroundColor;
+  }
+  if (effectiveBg) {
+    style.backgroundColor = effectiveBg;
+  }
+
+  // Text color: linked auto-computes from effective background, unlinked uses explicit
+  const textLinked = g.textLinkedToPrimary !== false; // default true
+  if (textLinked && effectiveBg) {
+    style.color = getContrastTextColor(effectiveBg);
+  } else if (!textLinked && g.textColor) {
+    style.color = g.textColor;
+  }
+
+  return style;
+});
+
 function viewFieldProps(item: ResolvedFieldItem): Record<string, unknown> {
   const bound: Record<string, unknown> = {};
   if (item.placement.displayName) bound.displayName = item.placement.displayName;
   if (item.placement.maskAsPassword) bound.maskAsPassword = item.placement.maskAsPassword;
   return bound;
+}
+
+function hasFieldColors(p: CustomFieldPlacement): boolean {
+  return !!p.primaryColor || !!p.backgroundColor || !!p.textColor;
+}
+
+function fieldCardStyle(p: CustomFieldPlacement): Record<string, string> {
+  const style: Record<string, string> = {};
+
+  if (p.primaryColor) {
+    style.borderColor = p.primaryColor;
+    style.borderStyle = "solid";
+    style.borderWidth = "1px";
+    style.borderRadius = "4px";
+  }
+
+  const bgLinked = p.bgLinkedToPrimary !== false;
+  let effectiveBg: string | undefined;
+  if (p.primaryColor && bgLinked) {
+    effectiveBg = lightenColor(p.primaryColor, p.bgLightness ?? 92, p.bgSaturation);
+  } else if (!bgLinked && p.backgroundColor) {
+    effectiveBg = p.backgroundColor;
+  }
+  if (effectiveBg) {
+    style.backgroundColor = effectiveBg;
+  }
+
+  const textLinked = p.textLinkedToPrimary !== false;
+  if (textLinked && effectiveBg) {
+    style.color = getContrastTextColor(effectiveBg);
+  } else if (!textLinked && p.textColor) {
+    style.color = p.textColor;
+  }
+
+  return style;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -178,4 +254,7 @@ function onDragChange(evt: any) {
   opacity: 0.4
   border: 2px dashed var(--q-primary)
   border-radius: 4px
+
+.field-color-wrap
+  padding: 8px
 </style>

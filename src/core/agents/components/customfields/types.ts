@@ -19,6 +19,20 @@ export interface CustomFieldPlacement {
   displayName?: string;
   /** When true, text fields render as password fields with a visibility toggle. */
   maskAsPassword?: boolean;
+  /** Primary color — used as the field wrapper border color (hex). */
+  primaryColor?: string;
+  /** Explicit background color override. Only used when bgLinkedToPrimary is false. */
+  backgroundColor?: string;
+  /** Explicit text color override. Only used when textLinkedToPrimary is false. */
+  textColor?: string;
+  /** When true (default), background is auto-derived from primaryColor. */
+  bgLinkedToPrimary?: boolean;
+  /** When true (default), text color is auto-computed for best contrast. */
+  textLinkedToPrimary?: boolean;
+  /** Saturation for auto-derived background (0-100). Defaults to 60% of primary's saturation. */
+  bgSaturation?: number;
+  /** Lightness for auto-derived background (0-100, default 92). */
+  bgLightness?: number;
 }
 
 /**
@@ -35,6 +49,22 @@ export interface CustomFieldGroupConfig {
   collapsed: boolean;
   /** Fields assigned to this group, ordered */
   fields: CustomFieldPlacement[];
+  /** Primary color — used as the card border color (hex, e.g. "#90caf9") */
+  primaryColor?: string;
+  /** Explicit background color override. Only used when bgLinkedToPrimary is false. */
+  backgroundColor?: string;
+  /** Explicit text color override. Only used when textLinkedToPrimary is false. */
+  textColor?: string;
+  /** When true (default), background is auto-derived from primaryColor. */
+  bgLinkedToPrimary?: boolean;
+  /** When true (default), text color is auto-computed for best contrast. */
+  textLinkedToPrimary?: boolean;
+  /** Saturation for auto-derived background (0-100). Defaults to 60% of primary's saturation. */
+  bgSaturation?: number;
+  /** Lightness for auto-derived background (0-100, default 92). */
+  bgLightness?: number;
+  /** @deprecated Use primaryColor instead. Kept for v1 migration. */
+  borderColor?: string;
 }
 
 /**
@@ -42,7 +72,7 @@ export interface CustomFieldGroupConfig {
  * Version field enables future schema migrations.
  */
 export interface CustomFieldLayout {
-  version: 1;
+  version: 1 | 2;
   groups: CustomFieldGroupConfig[];
 }
 
@@ -58,6 +88,20 @@ export interface ResolvedFieldItem {
 /** Sort criteria for fields within a group. */
 export type FieldSortBy = "name-asc" | "name-desc" | "type";
 
+/** Payload for group color changes. */
+export interface GroupColorPatch {
+  primaryColor?: string | undefined;
+  backgroundColor?: string | undefined;
+  textColor?: string | undefined;
+  bgLinkedToPrimary?: boolean;
+  textLinkedToPrimary?: boolean;
+  bgSaturation?: number;
+  bgLightness?: number;
+}
+
+/** Payload for field-level color changes. Same shape as GroupColorPatch. */
+export type FieldColorPatch = GroupColorPatch;
+
 /** Default column span for newly placed fields. */
 export const DEFAULT_COL_SPAN: GridColSpan = 12;
 
@@ -67,7 +111,7 @@ export const UNGROUPED_GROUP_ID = "__ungrouped__";
 /** Creates a default empty layout with a single "General" group. */
 export function createDefaultLayout(): CustomFieldLayout {
   return {
-    version: 1,
+    version: 2,
     groups: [
       {
         id: UNGROUPED_GROUP_ID,

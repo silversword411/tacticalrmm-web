@@ -10,6 +10,8 @@ import type {
   GridColSpan,
   ResolvedFieldItem,
   FieldSortBy,
+  GroupColorPatch,
+  FieldColorPatch,
 } from "./types";
 import {
   createDefaultLayout,
@@ -18,6 +20,35 @@ import {
 } from "./types";
 
 const STORAGE_KEY = "customFieldLayout";
+
+/**
+ * Migrates stored layout from v1 (borderColor/backgroundColor) to v2 (3-color system).
+ */
+function migrateLayout(layout: CustomFieldLayout): CustomFieldLayout {
+  if (layout.version >= 2) return layout;
+
+  const migratedGroups = layout.groups.map((group) => {
+    const migrated: CustomFieldGroupConfig = { ...group };
+
+    // Map old borderColor → primaryColor
+    if (group.borderColor && !group.primaryColor) {
+      migrated.primaryColor = group.borderColor;
+    }
+
+    // If old data had explicit backgroundColor, mark bg as unlinked
+    migrated.bgLinkedToPrimary = !group.backgroundColor;
+
+    // Text was never stored in v1, always link it
+    migrated.textLinkedToPrimary = true;
+
+    // Clean up deprecated field
+    delete migrated.borderColor;
+
+    return migrated;
+  });
+
+  return { version: 2, groups: migratedGroups };
+}
 
 /**
  * Reconciles a stored layout against the current set of custom fields.
@@ -85,6 +116,11 @@ export function useCustomFieldLayout(
     localStorage,
     { mergeDefaults: true },
   );
+
+  // Apply one-time migration from v1 → v2
+  if (storedLayout.value.version < 2) {
+    storedLayout.value = migrateLayout(storedLayout.value);
+  }
 
   // --- Edit mode ---
   const isEditMode = ref(false);
@@ -239,6 +275,14 @@ export function useCustomFieldLayout(
             const maskAsPassword = "maskAsPassword" in patch ? patch.maskAsPassword : f.maskAsPassword;
             if (displayName) updated.displayName = displayName;
             if (maskAsPassword) updated.maskAsPassword = maskAsPassword;
+            // Preserve color properties
+            if (f.primaryColor) updated.primaryColor = f.primaryColor;
+            if (f.backgroundColor) updated.backgroundColor = f.backgroundColor;
+            if (f.textColor) updated.textColor = f.textColor;
+            if (f.bgLinkedToPrimary !== undefined) updated.bgLinkedToPrimary = f.bgLinkedToPrimary;
+            if (f.textLinkedToPrimary !== undefined) updated.textLinkedToPrimary = f.textLinkedToPrimary;
+            if (f.bgSaturation !== undefined) updated.bgSaturation = f.bgSaturation;
+            if (f.bgLightness !== undefined) updated.bgLightness = f.bgLightness;
             return updated;
           }),
         };
@@ -262,6 +306,60 @@ export function useCustomFieldLayout(
     maskAsPassword: boolean,
   ) {
     updateFieldPlacement(groupId, fieldId, { maskAsPassword: maskAsPassword || undefined });
+  }
+
+  // --- Field colors ---
+  function setFieldColors(groupId: string, fieldId: number, colors: FieldColorPatch) {
+    layout.value = {
+      ...layout.value,
+      groups: layout.value.groups.map((g) => {
+        if (g.id !== groupId) return g;
+        return {
+          ...g,
+          fields: g.fields.map((f) => {
+            if (f.fieldId !== fieldId) return f;
+            const updated: CustomFieldPlacement = { ...f };
+
+            if ("primaryColor" in colors) {
+              if (colors.primaryColor) updated.primaryColor = colors.primaryColor;
+              else delete updated.primaryColor;
+            }
+            if ("backgroundColor" in colors) {
+              if (colors.backgroundColor) updated.backgroundColor = colors.backgroundColor;
+              else delete updated.backgroundColor;
+            }
+            if ("textColor" in colors) {
+              if (colors.textColor) updated.textColor = colors.textColor;
+              else delete updated.textColor;
+            }
+            if ("bgLinkedToPrimary" in colors) {
+              updated.bgLinkedToPrimary = colors.bgLinkedToPrimary;
+            }
+            if ("textLinkedToPrimary" in colors) {
+              updated.textLinkedToPrimary = colors.textLinkedToPrimary;
+            }
+            if ("bgSaturation" in colors) {
+              if (colors.bgSaturation != null) updated.bgSaturation = colors.bgSaturation;
+              else delete updated.bgSaturation;
+            }
+            if ("bgLightness" in colors) {
+              if (colors.bgLightness != null) updated.bgLightness = colors.bgLightness;
+              else delete updated.bgLightness;
+            }
+
+            // When linking, clear explicit overrides
+            if (updated.bgLinkedToPrimary) {
+              delete updated.backgroundColor;
+            }
+            if (updated.textLinkedToPrimary) {
+              delete updated.textColor;
+            }
+
+            return updated;
+          }),
+        };
+      }),
+    };
   }
 
   // --- Drag-and-drop: group reordering ---
@@ -370,6 +468,54 @@ export function useCustomFieldLayout(
     };
   }
 
+  // --- Group colors ---
+  function setGroupColors(groupId: string, colors: GroupColorPatch) {
+    layout.value = {
+      ...layout.value,
+      groups: layout.value.groups.map((g) => {
+        if (g.id !== groupId) return g;
+        const updated: CustomFieldGroupConfig = { ...g };
+
+        if ("primaryColor" in colors) {
+          if (colors.primaryColor) updated.primaryColor = colors.primaryColor;
+          else delete updated.primaryColor;
+        }
+        if ("backgroundColor" in colors) {
+          if (colors.backgroundColor) updated.backgroundColor = colors.backgroundColor;
+          else delete updated.backgroundColor;
+        }
+        if ("textColor" in colors) {
+          if (colors.textColor) updated.textColor = colors.textColor;
+          else delete updated.textColor;
+        }
+        if ("bgLinkedToPrimary" in colors) {
+          updated.bgLinkedToPrimary = colors.bgLinkedToPrimary;
+        }
+        if ("textLinkedToPrimary" in colors) {
+          updated.textLinkedToPrimary = colors.textLinkedToPrimary;
+        }
+        if ("bgSaturation" in colors) {
+          if (colors.bgSaturation != null) updated.bgSaturation = colors.bgSaturation;
+          else delete updated.bgSaturation;
+        }
+        if ("bgLightness" in colors) {
+          if (colors.bgLightness != null) updated.bgLightness = colors.bgLightness;
+          else delete updated.bgLightness;
+        }
+
+        // When linking, clear explicit overrides
+        if (updated.bgLinkedToPrimary) {
+          delete updated.backgroundColor;
+        }
+        if (updated.textLinkedToPrimary) {
+          delete updated.textColor;
+        }
+
+        return updated;
+      }),
+    };
+  }
+
   // --- Sort fields within a group ---
   function sortFieldsInGroup(groupId: string, sortBy: FieldSortBy) {
     const fieldMap = new Map(agentCustomFields.value.map((f) => [f.id, f]));
@@ -425,6 +571,8 @@ export function useCustomFieldLayout(
     addFieldToGroup,
     removeFieldFromGroup,
     sortFieldsInGroup,
+    setGroupColors,
+    setFieldColors,
     resetLayout,
   };
 }

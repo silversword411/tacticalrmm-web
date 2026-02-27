@@ -39,6 +39,8 @@
             @display-name-change="setFieldDisplayName"
             @mask-change="setFieldMasked"
             @sort-fields="sortFieldsInGroup"
+            @color-change="setGroupColors"
+            @field-color-change="setFieldColors"
             @update:value="onFieldValueUpdate"
           />
         </template>
@@ -113,6 +115,8 @@ const {
   addFieldToGroup,
   removeFieldFromGroup,
   sortFieldsInGroup,
+  setGroupColors,
+  setFieldColors,
   resetLayout,
 } = useCustomFieldLayout(fieldsRef);
 
