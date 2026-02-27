@@ -24,7 +24,35 @@
       <q-th auto-width>
         <q-btn dense flat icon="more_horiz">
           <q-menu>
-            <q-option-group v-model="visibleColumns" :options="columnOptions" type="checkbox" />
+            <div class="row items-center q-px-sm q-pt-xs q-pb-none">
+              <span class="text-caption text-grey col">Drag to reorder</span>
+              <q-btn flat dense size="xs" label="Reset" @click="resetColumns" />
+            </div>
+            <draggable
+              v-model="draggableItems"
+              class="q-list q-list--dense"
+              handle=".col-drag-handle"
+              ghost-class="tactical-table-col-ghost"
+              item-key="value"
+              @start="isDragging = true"
+              @end="onColumnReorder"
+            >
+              <template #item="{ element }">
+                <q-item dense class="tactical-table-col-menu-item">
+                  <q-item-section avatar class="col-drag-handle" style="min-width: 28px; cursor: move;">
+                    <q-icon name="drag_handle" size="sm" color="grey" />
+                  </q-item-section>
+                  <q-item-section>
+                    <q-checkbox
+                      :model-value="visibleColumns.includes(element.value)"
+                      :label="element.label"
+                      dense
+                      @update:model-value="(checked: boolean) => toggleColumnVisibility(element.value, checked)"
+                    />
+                  </q-item-section>
+                </q-item>
+              </template>
+            </draggable>
           </q-menu>
         </q-btn>
       </q-th>
@@ -41,8 +69,9 @@ export default defineComponent({
 </script>
 
 <script setup lang="ts">
-import { ref, computed, useTemplateRef, provide } from "vue";
+import { ref, computed, watch, useTemplateRef, provide } from "vue";
 import { useStorage } from "@vueuse/core";
+import draggable from "vuedraggable";
 import type { QTable, QTableProps } from "quasar";
 import { exportToCsv } from "src/utils/csv";
 
@@ -69,15 +98,42 @@ const columnSelectCol = {
   sortable: false,
 };
 
-const localColumns = computed(() =>
+const allColumns = computed(() =>
   props.columnSelect ? [...props.columns, columnSelectCol] : [...props.columns],
 );
 
-const defaultNames = computed(() => localColumns.value.map((c) => c.name));
+// required columns pinned to start (e.g. row selection checkbox)
+const requiredFirst = computed(() => allColumns.value.filter((c) => c.required && c.name !== "columnSelect"));
+// columnSelect column always pinned to end
+const requiredLast = computed(() => allColumns.value.filter((c) => c.required && c.name === "columnSelect"));
+// all other columns are reorderable
+const reorderableColumns = computed(() => allColumns.value.filter((c) => !c.required));
 
 const storedNames = props.storageKey
   ? useStorage<string[]>(`${props.storageKey}-columns`, [])
   : ref<string[]>([]);
+
+const storedOrder = props.storageKey
+  ? useStorage<string[]>(`${props.storageKey}-column-order`, [])
+  : ref<string[]>([]);
+
+const orderedReorderableColumns = computed(() => {
+  const order = storedOrder.value;
+  const cols = reorderableColumns.value;
+  const validOrder = order.filter((name) => cols.some((c) => c.name === name));
+  // append any new columns not yet in storedOrder
+  const newCols = cols.filter((c) => !validOrder.includes(c.name)).map((c) => c.name);
+  const finalOrder = [...validOrder, ...newCols];
+  return finalOrder.map((name) => cols.find((c) => c.name === name)!);
+});
+
+const localColumns = computed(() => [
+  ...requiredFirst.value,
+  ...orderedReorderableColumns.value,
+  ...requiredLast.value,
+]);
+
+const defaultNames = computed(() => localColumns.value.map((c) => c.name));
 
 const visibleColumns = computed<string[]>({
   get() {
@@ -89,10 +145,37 @@ const visibleColumns = computed<string[]>({
   },
 });
 
-// exclude 'required' columns from the columnOptions
-const columnOptions = computed(() =>
-  localColumns.value.filter((col) => !col.required).map((c) => ({ label: c.label, value: c.name })),
+// draggable column menu state
+interface ColumnMenuItem { label: string; value: string; }
+
+const draggableItems = ref<ColumnMenuItem[]>([]);
+const isDragging = ref(false);
+
+watch(
+  () => orderedReorderableColumns.value.map((c) => c.name).join(","),
+  () => {
+    if (!isDragging.value) {
+      draggableItems.value = orderedReorderableColumns.value.map((c) => ({ label: c.label, value: c.name }));
+    }
+  },
+  { immediate: true },
 );
+
+function onColumnReorder() {
+  isDragging.value = false;
+  storedOrder.value = draggableItems.value.map((i) => i.value);
+}
+
+function toggleColumnVisibility(name: string, checked: boolean) {
+  storedNames.value = checked
+    ? [...new Set([...storedNames.value, name])]
+    : storedNames.value.filter((n) => n !== name);
+}
+
+function resetColumns() {
+  storedOrder.value = [];
+  storedNames.value = [];
+}
 
 const tacticalTable = useTemplateRef<QTable>("tacticalTable");
 
@@ -119,6 +202,15 @@ defineExpose({
 </script>
 
 <style lang="sass">
+
+.tactical-table-col-ghost
+  opacity: 0.5
+  background: $primary
+  color: white
+
+.tactical-table-col-menu-item
+  padding-left: 4px
+  padding-right: 8px
 
 .column-bgcolor-dark
   td:last-child
