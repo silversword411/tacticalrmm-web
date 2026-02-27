@@ -33,7 +33,14 @@
               no-selection-unset
             >
               <template #default-header="props">
-                <div class="row items-center">
+                <div
+                  class="row items-center"
+                  :class="{ 'drag-drop-target': !props.node.children && dropTargetNode === props.node.raw }"
+                  @dragenter.prevent="onTreeNodeDragEnter($event, props.node)"
+                  @dragover.prevent="onTreeNodeDragOver($event, props.node)"
+                  @dragleave="onTreeNodeDragLeave(props.node)"
+                  @drop.prevent="onTreeNodeDrop($event, props.node)"
+                >
                   <q-icon :name="props.node.icon" :color="props.node.color" class="q-mr-sm" />
                   <div>
                     {{ props.node.label }}
@@ -216,7 +223,7 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from "vue";
 import { useQuasar, QTree } from "quasar";
-import { useDashboardStore, useClientStore, useSiteStore, useURLActionStore, runURLAction } from "src/stores/api";
+import { useDashboardStore, useClientStore, useSiteStore, useURLActionStore, runURLAction, useAgentStore } from "src/stores/api";
 
 const { clients, removeClient, getClients } = useClientStore();
 const { removeSite } = useSiteStore();
@@ -244,11 +251,15 @@ const {
   setClientTreeSplitter,
   setTableHeight,
   refreshDashboard,
+  draggingAgent,
 } = useDashboardStore();
+
+const { updateAgent, refreshAgentSearch } = useAgentStore();
 
 const $q = useQuasar();
 
 const innerModel = ref(($q.screen.height - 82) / 2);
+const dropTargetNode = ref<string | null>(null);
 
 const clientTree = computed((): ClientTreeNode[] => {
   const output: ClientTreeNode[] = [];
@@ -420,6 +431,57 @@ const urlActions = computed(() => {
   }
 });
 
+function onTreeNodeDragEnter(event: DragEvent, node: ClientTreeNode) {
+  if (!draggingAgent.value || node.children) return;
+  dropTargetNode.value = node.raw;
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+}
+
+function onTreeNodeDragOver(event: DragEvent, node: ClientTreeNode) {
+  if (!draggingAgent.value) return;
+  if (node.children) {
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "none";
+    return;
+  }
+  if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+}
+
+function onTreeNodeDragLeave(node: ClientTreeNode) {
+  if (dropTargetNode.value === node.raw) dropTargetNode.value = null;
+}
+
+function onTreeNodeDrop(event: DragEvent, node: ClientTreeNode) {
+  dropTargetNode.value = null;
+  const agent = draggingAgent.value;
+  draggingAgent.value = null;
+
+  if (!agent || node.children) return;
+
+  const targetSiteId = parseInt(node.raw.split("|")[1] ?? "");
+
+  if (agent.site === targetSiteId) {
+    notifyWarning(`${agent.hostname} is already in site: ${node.label}`);
+    return;
+  }
+
+  $q.dialog({
+    title: "Move Agent",
+    message: `Move "${agent.hostname}" to site "${node.label}"?`,
+    cancel: true,
+    ok: { label: "Move", color: "primary" },
+  }).onOk(() => {
+    void (async () => {
+      try {
+        await updateAgent(agent.agent_id, { site: targetSiteId });
+        refreshAgentSearch();
+        getClients();
+      } catch {
+        // updateAgent handles error notification internally
+      }
+    })();
+  });
+}
+
 onMounted(() => {
   getClients();
   getURLActions();
@@ -431,5 +493,11 @@ onMounted(() => {
 .my-menu-link {
   color: white;
   background: lightgray;
+}
+
+.drag-drop-target {
+  background-color: rgba(25, 118, 210, 0.15);
+  border-radius: 4px;
+  outline: 2px dashed #1976d2;
 }
 </style>

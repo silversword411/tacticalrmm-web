@@ -10,6 +10,7 @@ import { useClientStore } from "src/core/clients/api";
 import { useCachedAction } from "src/core/dashboard/composables";
 
 import type { AgentDblClickAction, ClientTreeSort, AgentTableTab } from "src/core/accounts/types";
+import type { Agent } from "src/core/agents/types";
 
 // ============================================================================
 // Dashboard Store
@@ -108,6 +109,7 @@ function createDashboardStore() {
   const tabHeight = ref(300);
   const tableHeight = ref(300);
   const selectedClientSiteNode = ref<string | null>(null);
+  const draggingAgent = ref<Agent | null>(null);
 
   // State - Version Management
   const rmmVersion = useLocalStorage<string | undefined>("rmmVersion", undefined);
@@ -282,6 +284,7 @@ function createDashboardStore() {
     tableHeight,
     tabHeight,
     selectedClientSiteNode,
+    draggingAgent,
 
     // State - Version Management
     updateAvailable,

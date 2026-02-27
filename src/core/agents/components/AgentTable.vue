@@ -397,17 +397,24 @@
 
             <!-- mon type -->
             <template v-else-if="col.name === 'mon-type'">
-              <q-icon
-                v-if="props.row.monitoring_type === 'server'"
-                name="dns"
-                size="sm"
-                color="primary"
+              <span
+                draggable="true"
+                class="agent-drag-handle"
+                @dragstart="onAgentDragStart($event, props.row)"
+                @dragend="onAgentDragEnd"
               >
-                <q-tooltip>Server</q-tooltip>
-              </q-icon>
-              <q-icon v-else name="computer" size="sm" color="primary">
-                <q-tooltip>Workstation</q-tooltip>
-              </q-icon>
+                <q-icon
+                  v-if="props.row.monitoring_type === 'server'"
+                  name="dns"
+                  size="sm"
+                  color="primary"
+                >
+                  <q-tooltip>Server - drag to move to a site</q-tooltip>
+                </q-icon>
+                <q-icon v-else name="computer" size="sm" color="primary">
+                  <q-tooltip>Workstation - drag to move to a site</q-tooltip>
+                </q-icon>
+              </span>
             </template>
 
             <!-- checks status -->
@@ -512,7 +519,7 @@ const {
 import { runURLAction } from "src/core/settings/api";
 
 // setup dashboard store
-const { tableHeight, selectedClientSiteNode, dashboardSettings, formatDate } = useDashboardStore();
+const { tableHeight, selectedClientSiteNode, dashboardSettings, formatDate, draggingAgent } = useDashboardStore();
 import { getTimeLapse } from "src/utils/format";
 
 // ui imports
@@ -854,4 +861,27 @@ function overdueAlert(
 
   void updateAgent(agent.agent_id, data);
 }
+
+function onAgentDragStart(event: DragEvent, agent: Agent) {
+  draggingAgent.value = agent;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", agent.agent_id);
+  }
+}
+
+function onAgentDragEnd() {
+  draggingAgent.value = null;
+}
 </script>
+
+<style scoped>
+.agent-drag-handle {
+  cursor: grab;
+  display: inline-flex;
+  align-items: center;
+}
+.agent-drag-handle:active {
+  cursor: grabbing;
+}
+</style>
