@@ -3,23 +3,25 @@
   "editor.guides.bracketPairs": true,
   "editor.formatOnSave": true,
   "files.watcherExclude": {
-      "**/.git/objects/**": true,
-      "**/.git/subtree-cache/**": true,
-      "**/node_modules/": true,
-      "/node_modules/**": true,
-      "**/env/": true,
-      "/env/**": true
+    "**/.git/objects/**": true,
+    "**/.git/subtree-cache/**": true,
+    "**/node_modules/": true,
+    "/node_modules/**": true,
+    "**/env/": true,
+    "/env/**": true
   },
   "prettier.prettierPath": "./node_modules/prettier",
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "editor.codeActionsOnSave": [
-    "source.fixAll.eslint"
-  ],
-  "eslint.validate": [
-    "javascript",
-    "javascriptreact",
-    "typescript",
-    "vue"
-  ],
-  "typescript.tsdk": "node_modules/typescript/lib"
+  "editor.codeActionsOnSave": ["source.fixAll.eslint"],
+  "eslint.validate": ["javascript", "javascriptreact", "typescript", "vue"],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "remote.autoForwardPorts": true,
+  "remote.restoreForwardedPorts": true,
+  "forwardPorts": [9000],
+  "portsAttributes": {
+    "9000": {
+      "label": "tacticalrmm-web dev",
+      "onAutoForward": "openBrowser"
+    }
+  }
 }

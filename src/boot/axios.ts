@@ -20,8 +20,8 @@ export const getBaseUrl = (): string => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return (window as any)._env_.PROD_URL;
   } else {
-    // Use local backend for development
-    return "http://localhost:8000";
+    // Use relative URL so Vite's dev server proxy forwards to the real backend
+    return "";
   }
 };
 

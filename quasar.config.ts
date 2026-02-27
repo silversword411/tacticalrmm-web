@@ -102,6 +102,21 @@ export default defineConfig((ctx) => {
     devServer: {
       https: process.env.USE_HTTPS === "true",
       open: false, // opens browser window automatically
+      ...(ctx.dev && {
+        proxy: {
+          // Proxy API calls to the real backend so CORS/auth work correctly
+          "^/(v2|api|logout|logoutall|clients|agents|checks|services|winupdate|software|core|automation|tasks|logs|scripts|alerts|accounts|reporting|_allauth|beta|silk)(/|$)": {
+            target: process.env.DEV_URL ?? "https://api.davidthegeek.com",
+            changeOrigin: true,
+            secure: true,
+          },
+          "/ws": {
+            target: (process.env.DEV_URL ?? "https://api.davidthegeek.com").replace(/^http/, "ws"),
+            changeOrigin: true,
+            ws: true,
+          },
+        },
+      }),
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
