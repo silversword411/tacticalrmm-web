@@ -213,7 +213,7 @@
       <q-item-section>Agent Recovery</q-item-section>
     </q-item>
 
-    <q-item v-close-popup clickable @click="pingAgent(agent)">
+    <q-item v-close-popup clickable @click.prevent="handleRemoveAgent($event, agent)">
       <q-item-section side>
         <q-icon size="xs" name="delete" />
       </q-item-section>
@@ -393,9 +393,29 @@ function showAgentRecovery(agent: Agent) {
   });
 }
 
+function handleRemoveAgent(event: Event, agent: Agent) {
+  if ((event as MouseEvent).shiftKey && agent.status === "overdue") {
+    $q.dialog({
+      title: "Confirm Delete",
+      message: `Are you sure you want to delete ${agent.hostname}? The agent will need to be manually uninstalled from the computer.`,
+      cancel: { label: "No", color: "primary" },
+      ok: { label: "Yes", color: "negative" },
+      noBackdropDismiss: true,
+    }).onOk(() => {
+      void removeAgent(agent.agent_id);
+    });
+  } else {
+    void pingAgent(agent);
+  }
+}
+
 async function pingAgent(agent: Agent) {
+  $q.loading.show();
   const result = await sendAgentPing(agent.agent_id);
-  if (result === "offline") {
+  $q.loading.hide();
+  if (result === "online") {
+    deleteAgent(agent);
+  } else {
     $q.dialog({
       title: "Agent offline",
       message: `${agent.hostname} cannot be contacted.
@@ -409,8 +429,6 @@ async function pingAgent(agent: Agent) {
       .onCancel(() => {
         return;
       });
-  } else if (result === "online") {
-    deleteAgent(agent);
   }
 }
 
