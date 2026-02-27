@@ -254,7 +254,7 @@ const {
   draggingAgent,
 } = useDashboardStore();
 
-const { updateAgent, refreshAgentSearch } = useAgentStore();
+const { updateAgent, refreshAgentSearch, agents, selectedAgentIds } = useAgentStore();
 
 const $q = useQuasar();
 
@@ -459,20 +459,36 @@ function onTreeNodeDrop(event: DragEvent, node: ClientTreeNode) {
 
   const targetSiteId = parseInt(node.raw.split("|")[1] ?? "");
 
-  if (agent.site === targetSiteId) {
-    notifyWarning(`${agent.hostname} is already in site: ${node.label}`);
+  // If the dragged agent is part of a multi-selection, move all selected agents;
+  // otherwise just move the single dragged agent.
+  const agentsToMove =
+    selectedAgentIds.value.includes(agent.agent_id) && selectedAgentIds.value.length > 1
+      ? agents.value.filter(
+          (a) => selectedAgentIds.value.includes(a.agent_id) && a.site !== targetSiteId,
+        )
+      : agent.site !== targetSiteId
+        ? [agent]
+        : [];
+
+  if (agentsToMove.length === 0) {
+    notifyWarning(`Agent(s) already in site: ${node.label}`);
     return;
   }
 
+  const message =
+    agentsToMove.length === 1
+      ? `Move "${agentsToMove[0]?.hostname}" to site "${node.label}"?`
+      : `Move ${agentsToMove.length} agents to site "${node.label}"?`;
+
   $q.dialog({
     title: "Move Agent",
-    message: `Move "${agent.hostname}" to site "${node.label}"?`,
+    message,
     cancel: true,
     ok: { label: "Move", color: "primary" },
   }).onOk(() => {
     void (async () => {
       try {
-        await updateAgent(agent.agent_id, { site: targetSiteId });
+        await Promise.all(agentsToMove.map((a) => updateAgent(a.agent_id, { site: targetSiteId })));
         refreshAgentSearch();
         getClients();
       } catch {
