@@ -175,6 +175,7 @@ export interface AgentNote {
   id: number;
   agent_id: string;
   user: number;
+  username?: string;
   note: string;
   entry_time: string;
 }

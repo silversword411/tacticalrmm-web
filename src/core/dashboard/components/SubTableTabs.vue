@@ -61,7 +61,11 @@
           name="notes"
           icon="far fa-sticky-note"
           label="Notes"
-        />
+        >
+          <q-badge v-if="agentNotes.length > 0" color="primary" floating style="right: -20px">
+            {{ agentNotes.length }}
+          </q-badge>
+        </q-tab>
         <q-tab
           v-if="activeTabs.includes('assets')"
           content-class="min-width"
@@ -125,7 +129,19 @@
 
 <script lang="ts" setup>
 // composition imports
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
+import { useAgentNoteStore, useAgentStore } from "src/stores/api";
+
+const { agentNotes, getAgentNotes } = useAgentNoteStore();
+const { selectedAgentId } = useAgentStore();
+
+watch(
+  selectedAgentId,
+  (newValue) => {
+    if (newValue) getAgentNotes(newValue);
+  },
+  { immediate: true },
+);
 
 // ui imports
 import SummaryTab from "src/core/agents/components/tabs/SummaryTab.vue";
