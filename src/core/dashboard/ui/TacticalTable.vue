@@ -167,9 +167,13 @@ function onColumnReorder() {
 }
 
 function toggleColumnVisibility(name: string, checked: boolean) {
-  storedNames.value = checked
-    ? [...new Set([...storedNames.value, name])]
-    : storedNames.value.filter((n) => n !== name);
+  if (checked) {
+    storedNames.value = [...new Set([...storedNames.value, name])];
+  } else {
+    // If storedNames is empty we're in the "show all" fallback state — seed it first
+    const base = storedNames.value.length ? storedNames.value : defaultNames.value;
+    storedNames.value = base.filter((n) => n !== name);
+  }
 }
 
 function resetColumns() {
