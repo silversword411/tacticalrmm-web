@@ -93,7 +93,7 @@ a
   background-color: #c9e6ff
 
 .highlight-dark
-  background-color: #404040
+  background-color: #1a3a5c
 
 .action-completed
   background-color: $positive
