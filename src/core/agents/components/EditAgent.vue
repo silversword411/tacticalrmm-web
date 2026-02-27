@@ -169,14 +169,10 @@
 
                 <!-- custom fields -->
                 <q-tab-panel name="customfields">
-                  <div v-if="agentCustomFields.length === 0" class="text-subtitle">
-                    No agent custom fields found. Go to **Settings > Global Settings > Custom
-                    Settings**
-                  </div>
-
-                  <q-card-section v-for="field in agentCustomFields" :key="field.id">
-                    <CustomField v-model="agentCustomFieldValues[field.name]" :field="field" />
-                  </q-card-section>
+                  <CustomFieldsPanel
+                    :agent-custom-fields="agentCustomFields"
+                    :values="agentCustomFieldValues"
+                  />
                 </q-tab-panel>
 
                 <!-- automation policies -->
@@ -352,7 +348,7 @@ import { formatCustomFields } from "src/utils/format";
 
 // ui imports
 import PatchPolicyForm from "src/core/automation/components/PatchPolicyForm.vue";
-import CustomField from "src/core/dashboard/ui/CustomField.vue";
+import CustomFieldsPanel from "./customfields/CustomFieldsPanel.vue";
 
 // type imports
 import type { UpdateAgentRequest, AgentMonitoringType } from "../types";

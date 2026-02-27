@@ -5,25 +5,51 @@
     :class="longTextClass(field)"
     filled
     dense
-    :label="field.name"
-    :type="field.type === 'text' ? 'text' : 'number'"
+    :label="label"
+    :type="inputType"
     :hint="hintText(field)"
     :rules="[...validationRules]"
     reactive-rules
-    autogrow
-  />
+    :autogrow="!maskAsPassword"
+    @keydown.enter.stop
+  >
+    <template #append>
+      <q-icon
+        v-if="maskAsPassword && field.type === 'text'"
+        :name="passwordVisible ? 'visibility' : 'visibility_off'"
+        class="cursor-pointer"
+        size="xs"
+        @click.stop="passwordVisible = !passwordVisible"
+      >
+        <q-tooltip>{{ passwordVisible ? 'Hide' : 'Show' }}</q-tooltip>
+      </q-icon>
+      <q-icon
+        v-if="copyableText"
+        name="content_copy"
+        class="cursor-pointer"
+        size="xs"
+        @click.stop="copyValue"
+      >
+        <q-tooltip>Copy to clipboard</q-tooltip>
+      </q-icon>
+    </template>
+    <q-tooltip v-if="displayName">{{ field.name }}</q-tooltip>
+  </q-input>
 
   <q-toggle
     v-else-if="field.type === 'checkbox'"
     v-model="value"
-    :label="field.name"
+    :label="label"
     :hint="hintText(field)"
-  />
+    class="custom-field-toggle"
+  >
+    <q-tooltip>{{ field.name }}</q-tooltip>
+  </q-toggle>
 
   <q-input
     v-else-if="field.type === 'datetime'"
     v-model="value"
-    :label="field.name"
+    :label="label"
     :hint="hintText(field)"
     type="datetime-local"
     dense
@@ -31,7 +57,15 @@
     filled
     :rules="[...validationRules]"
     reactive-rules
-  />
+    @keydown.enter.stop
+  >
+    <template v-if="copyableText" #append>
+      <q-icon name="content_copy" class="cursor-pointer" size="xs" @click.stop="copyValue">
+        <q-tooltip>Copy to clipboard</q-tooltip>
+      </q-icon>
+    </template>
+    <q-tooltip v-if="displayName">{{ field.name }}</q-tooltip>
+  </q-input>
 
   <q-select
     v-else-if="field.type === 'single' || field.type === 'multiple'"
@@ -39,26 +73,59 @@
     filled
     dense
     :hint="hintText(field)"
-    :label="field.name"
+    :label="label"
     :options="field.options"
     :multiple="field.type === 'multiple'"
     :rules="[...validationRules]"
     reactive-rules
     clearable
-  />
+  >
+    <template v-if="copyableText" #append>
+      <q-icon name="content_copy" class="cursor-pointer" size="xs" @click.stop="copyValue">
+        <q-tooltip>Copy to clipboard</q-tooltip>
+      </q-icon>
+    </template>
+    <q-tooltip v-if="displayName">{{ field.name }}</q-tooltip>
+  </q-select>
 </template>
 
 <script lang="ts" setup>
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { CustomField } from "src/core/settings/types";
 import { truncateText } from "src/utils/format";
+import { copyOutput } from "src/utils/helpers";
 
 const props = defineProps<{
   field: CustomField;
+  displayName?: string;
+  maskAsPassword?: boolean;
 }>();
+
+const label = computed(() => props.displayName || props.field.name);
+
+const passwordVisible = ref(false);
+
+const inputType = computed(() => {
+  if (props.maskAsPassword && props.field.type === "text") {
+    return passwordVisible.value ? "text" : "password";
+  }
+  return props.field.type === "text" ? "text" : "number";
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const value = defineModel<any>();
+
+const copyableText = computed(() => {
+  if (value.value == null || value.value === "") return "";
+  if (Array.isArray(value.value)) return value.value.join(", ");
+  return String(value.value);
+});
+
+function copyValue() {
+  if (copyableText.value) {
+    copyOutput(copyableText.value);
+  }
+}
 
 const validationRules = computed(() => {
   const rules = [];
@@ -90,3 +157,13 @@ function longTextClass(field: CustomField) {
     : "";
 }
 </script>
+
+<style lang="sass" scoped>
+.custom-field-toggle
+  max-width: 100%
+  :deep(.q-toggle__label)
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+    min-width: 0
+</style>
