@@ -41,6 +41,7 @@
           <q-space />
 
           <q-input
+            ref="searchInputRef"
             v-model="search"
             style="width: 300px"
             filled
@@ -48,6 +49,7 @@
             dense
             clearable
             class="q-pr-sm"
+            @keydown.esc.stop="search = ''"
           >
             <template #prepend>
               <q-icon name="search" />
@@ -189,8 +191,9 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from "vue";
-import { useQuasar, useDialogPluginComponent } from "quasar";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useStorage } from "@vueuse/core";
+import { useQuasar, useDialogPluginComponent, QInput } from "quasar";
 import { useAuthStore, useUserStore, useDashboardStore } from "src/stores/api";
 
 const { users, userCount, getUsers, updateUser, removeUser, adminResetMFA } = useUserStore();
@@ -273,7 +276,22 @@ const { dialogRef, onDialogHide } = useDialogPluginComponent();
 defineEmits(useDialogPluginComponent.emits);
 
 const search = ref("");
-const pagination = ref({
+const searchInputRef = ref<InstanceType<typeof QInput> | null>(null);
+
+function onGlobalKeydown(e: KeyboardEvent) {
+  if (e.ctrlKey && e.key === "f") {
+    const el = dialogRef.value?.$el as HTMLElement | undefined;
+    if (el && !el.contains(document.activeElement)) return;
+    e.preventDefault();
+    searchInputRef.value?.focus();
+  }
+}
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", onGlobalKeydown);
+});
+
+const pagination = useStorage("admin-manager-pagination", {
   rowsPerPage: 0,
   sortBy: "username",
   descending: true,
@@ -354,5 +372,8 @@ function reset2FA(user: User) {
   });
 }
 
-onMounted(getUsers);
+onMounted(() => {
+  getUsers();
+  window.addEventListener("keydown", onGlobalKeydown);
+});
 </script>
