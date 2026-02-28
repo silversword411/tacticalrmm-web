@@ -260,7 +260,7 @@ function createAgentStore() {
   }
 
   function openAgentWindow(agent_id: string) {
-    const url = router.resolve(`/agents/${agent_id}`).href;
+    const url = router.resolve(`/agent/${agent_id}`).href;
     openURL(url, undefined, { popup: true, width: 1600, height: 900 });
   }
 

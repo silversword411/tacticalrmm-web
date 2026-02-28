@@ -9,7 +9,7 @@
         <q-item v-for="alert in trayAlerts" :key="alert.id">
           <q-item-section>
             <q-item-label overline
-              ><router-link :to="`/agents/${alert.agent_id}`"
+              ><router-link :to="`/agent/${alert.agent_id}`"
                 >{{ alert.client }} - {{ alert.site }} - {{ alert.hostname }}</router-link
               ></q-item-label
             >

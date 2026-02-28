@@ -8,7 +8,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import("src/layouts/MainLayout.vue"),
     children: [
       {
-        path: "agents/:agent_id",
+        path: "agent/:agent_id",
         name: "Agent",
         component: () => import("src/views/AgentView.vue"),
         meta: {
