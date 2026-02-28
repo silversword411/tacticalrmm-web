@@ -90,7 +90,7 @@ defineEmits<{
   'update:selected': [value: readonly unknown[]];
 }>();
 
-const columnSelectCol = {
+const columnSelectCol: TacticalColumn = {
   name: "columnSelect",
   label: "Column Select",
   field: "columnSelect",
@@ -133,7 +133,9 @@ const localColumns = computed(() => [
   ...requiredLast.value,
 ]);
 
-const defaultNames = computed(() => localColumns.value.map((c) => c.name));
+const defaultNames = computed(() =>
+  localColumns.value.filter((c) => !c.hiddenByDefault).map((c) => c.name),
+);
 
 const visibleColumns = computed<string[]>({
   get() {
@@ -167,11 +169,11 @@ function onColumnReorder() {
 }
 
 function toggleColumnVisibility(name: string, checked: boolean) {
+  // If storedNames is empty we're in the default fallback state — seed it first
+  const base = storedNames.value.length ? storedNames.value : [...defaultNames.value];
   if (checked) {
-    storedNames.value = [...new Set([...storedNames.value, name])];
+    storedNames.value = [...new Set([...base, name])];
   } else {
-    // If storedNames is empty we're in the "show all" fallback state — seed it first
-    const base = storedNames.value.length ? storedNames.value : defaultNames.value;
     storedNames.value = base.filter((n) => n !== name);
   }
 }
