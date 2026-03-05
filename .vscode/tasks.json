@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Frontend: Dev Server",
+      "label": "Frontend: Dev Server Start (9000)",
       "type": "shell",
       "command": "npm",
       "args": ["run", "dev", "--", "--port", "9000"],
@@ -29,7 +29,7 @@
       }
     },
     {
-      "label": "Frontend: Stop Dev Server (9000)",
+      "label": "Frontend: Dev Server Stop",
       "type": "shell",
       "command": "bash",
       "args": ["-lc", "lsof -ti:9000 | xargs -r kill"],
@@ -38,6 +38,89 @@
         "reveal": "always",
         "panel": "shared"
       }
+    },
+    {
+      "label": "Frontend: Build & Deploy",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "name=\"${input:versionName}\"; if [ -n \"$name\" ]; then trmm-frontend-build --name \"$name\"; else trmm-frontend-build; fi"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Frontend: Build, Deploy & Activate",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "name=\"${input:versionName}\"; if [ -n \"$name\" ]; then trmm-frontend-build --name \"$name\" --activate; else trmm-frontend-build --activate; fi"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Frontend: Switch Version",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "trmm-frontend-versions switch \"${input:switchVersion}\""],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Frontend: List Versions",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "trmm-frontend-versions list"],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    },
+    {
+      "label": "Frontend: Delete Version",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "trmm-frontend-versions remove \"${input:deleteVersion}\""],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "focus": true
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "versionName",
+      "type": "promptString",
+      "description": "Version name (leave empty to use current git branch name)"
+    },
+    {
+      "id": "switchVersion",
+      "type": "promptString",
+      "description": "Version name to switch to (run 'Frontend: List Versions' to see available)"
+    },
+    {
+      "id": "deleteVersion",
+      "type": "promptString",
+      "description": "Version name to delete (cannot delete the active version)"
     }
   ]
 }
