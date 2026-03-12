@@ -552,7 +552,6 @@ const filterRebootNeeded = ref(false);
 
 const columns: TacticalColumn[] = [
   { name: "selection", field: "", align: "left", label: "", sortable: false, required: true },
-  { name: "status", field: "status", align: "left", label: "Agent Status", sortable: true },
   { name: "smsalert", align: "left", label: "SMS Alert", field: "", sortable: false },
   { name: "emailalert", align: "left", label: "Email Alert", field: "", sortable: false },
   { name: "dashboardalert", align: "left", label: "Dashboard Alert", field: "", sortable: false },
@@ -563,17 +562,6 @@ const columns: TacticalColumn[] = [
     field: "monitoring_type",
     sortable: true,
     align: "left",
-  },
-  {
-    name: "checks-status",
-    align: "left",
-    field: "checks",
-    label: "Checks Status",
-    sortable: true,
-    sort: (a, b) =>
-      parseInt(b.failing) - parseInt(a.failing) ||
-      parseInt(b.warning) - parseInt(a.warning) ||
-      parseInt(b.info) - parseInt(a.info),
   },
   { name: "client_name", label: "Client", field: "client_name", sortable: true, align: "left" },
   { name: "site_name", label: "Site", field: "site_name", sortable: true, align: "left" },
@@ -592,6 +580,18 @@ const columns: TacticalColumn[] = [
     sortable: true,
     align: "left",
     classes: (row) => (row.italic ? "text-italic" : ""),
+  },
+  { name: "status", field: "status", align: "left", label: "Agent Status", sortable: true },
+  {
+    name: "checks-status",
+    align: "left",
+    field: "checks",
+    label: "Checks Status",
+    sortable: true,
+    sort: (a, b) =>
+      parseInt(b.failing) - parseInt(a.failing) ||
+      parseInt(b.warning) - parseInt(a.warning) ||
+      parseInt(b.info) - parseInt(a.info),
   },
   {
     name: "patchespending",
