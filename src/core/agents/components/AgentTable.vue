@@ -881,6 +881,7 @@ function onAgentDragEnd() {
   cursor: grab;
   display: inline-flex;
   align-items: center;
+  vertical-align: middle;
 }
 .agent-drag-handle:active {
   cursor: grabbing;
