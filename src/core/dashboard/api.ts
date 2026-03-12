@@ -201,7 +201,7 @@ function createDashboardStore() {
     const clientStore = useClientStore();
     const agentStore = useAgentStore();
     clientStore.getClients({ force: true });
-    agentStore.getAgents({ force: true });
+    agentStore.refreshAgentSearch();
   }
 
   // API Actions - Version Management
