@@ -50,7 +50,15 @@
         />
         <q-space />
 
-        <q-input v-model="filter" filled label="Search" dense clearable class="q-pr-sm" style="width: 300px">
+        <q-input
+          v-model="filter"
+          filled
+          label="Search"
+          dense
+          clearable
+          class="q-pr-sm"
+          style="width: 300px"
+        >
           <template #prepend>
             <q-icon name="search" color="primary" />
           </template>
@@ -102,7 +110,7 @@
             </q-list>
           </q-menu>
 
-          <q-td v-for="col in props.cols" :key="col.name" :props="props">
+          <q-td v-for="col in props.cols" :key="col.name" :props="props" :style="col.style">
             <!-- action -->
             <template v-if="col.name === 'action'">
               <q-icon v-if="col.value === 'nothing'" name="fiber_manual_record" color="grey">
@@ -145,7 +153,7 @@
 
             <!-- title -->
             <template v-else-if="col.name === 'title'">
-              <truncate-text :text="col.value" />
+              <truncate-text :text="col.value" style="max-width: 100%" />
             </template>
 
             <!-- description -->
@@ -155,7 +163,7 @@
                 class="text-primary"
                 @click="showUpdateDetails(props.row)"
               >
-                <truncate-text :text="col.value" />
+                <truncate-text :text="col.value" style="max-width: 100%" />
               </span>
             </template>
 
@@ -176,7 +184,14 @@ import { useQuasar } from "quasar";
 import { useAgentStore, useWindowsUpdateStore, useDashboardStore } from "src/stores/api";
 
 const { selectedAgentPlatform, selectedAgentId, selectedAgentIds } = useAgentStore();
-const { updates, isLoading, getAgentUpdates, runAgentUpdateScan, runAgentUpdateInstall, updateAgentUpdate } = useWindowsUpdateStore();
+const {
+  updates,
+  isLoading,
+  getAgentUpdates,
+  runAgentUpdateScan,
+  runAgentUpdateInstall,
+  updateAgentUpdate,
+} = useWindowsUpdateStore();
 const { dashboardSettings, tabHeight, formatDate } = useDashboardStore();
 
 // ui imports
@@ -193,12 +208,16 @@ const columns: TacticalColumn[] = [
     field: "action",
     label: "Action",
     align: "left",
+    style: "width: 50px",
+    headerStyle: "width: 50px",
   },
   {
     name: "installed",
     field: "installed",
     label: "Installed",
     align: "left",
+    style: "width: 60px",
+    headerStyle: "width: 60px",
   },
   {
     name: "severity",
@@ -207,6 +226,8 @@ const columns: TacticalColumn[] = [
     align: "left",
     sortable: true,
     format: (val: string) => (val ? val : "Other"),
+    style: "width: 90px",
+    headerStyle: "width: 90px",
   },
   {
     name: "title",
@@ -214,6 +235,7 @@ const columns: TacticalColumn[] = [
     field: "title",
     align: "left",
     sortable: true,
+    style: "overflow: hidden; text-overflow: ellipsis; white-space: nowrap",
   },
   {
     name: "description",
@@ -221,6 +243,7 @@ const columns: TacticalColumn[] = [
     field: "description",
     align: "left",
     sortable: true,
+    style: "overflow: hidden; text-overflow: ellipsis; white-space: nowrap",
   },
   {
     name: "date_installed",
@@ -229,6 +252,8 @@ const columns: TacticalColumn[] = [
     align: "left",
     sortable: true,
     format: (val: string) => formatDate(val),
+    style: "width: 120px",
+    headerStyle: "width: 120px",
   },
 ];
 
@@ -277,3 +302,8 @@ onMounted(() => {
   if (selectedAgentId.value) getAgentUpdates(selectedAgentId.value);
 });
 </script>
+
+<style lang="sass" scoped>
+:deep(.q-table)
+  table-layout: fixed
+</style>
