@@ -175,7 +175,7 @@
       </template>
       <!-- header slots -->
       <template #header-cell-selection="props">
-        <q-th auto-width :props="props">
+        <q-th auto-width :props="props" class="col-selection">
           <q-checkbox
             :model-value="allSelected"
             :indeterminate="someSelected && !allSelected"
@@ -185,21 +185,21 @@
         </q-th>
       </template>
       <template #header-cell-smsalert="props">
-        <q-th auto-width :props="props">
+        <q-th auto-width :props="props" class="col-alert">
           <q-icon name="phone_android" size="1.5em">
             <q-tooltip>Send an text alert when agent is overdue</q-tooltip>
           </q-icon>
         </q-th>
       </template>
       <template #header-cell-emailalert="props">
-        <q-th auto-width :props="props">
+        <q-th auto-width :props="props" class="col-alert">
           <q-icon name="email" size="1.5em">
             <q-tooltip>Send an email alert when agent is overdue</q-tooltip>
           </q-icon>
         </q-th>
       </template>
       <template #header-cell-dashboardalert="props">
-        <q-th auto-width :props="props">
+        <q-th auto-width :props="props" class="col-alert">
           <q-icon name="notifications" size="1.5em">
             <q-tooltip>Show a dashboard alert when agent is overdue</q-tooltip>
           </q-icon>
@@ -251,7 +251,13 @@
         <q-tr
           :props="props"
           class="cursor-pointer"
-          :class="selectedAgentIds.includes(props.row.agent_id) ? ($q.dark.isActive ? 'highlight-dark' : 'highlight') : ''"
+          :class="
+            selectedAgentIds.includes(props.row.agent_id)
+              ? $q.dark.isActive
+                ? 'highlight-dark'
+                : 'highlight'
+              : ''
+          "
           @contextmenu="selectRow(props.row)"
           @click="selectRow(props.row)"
           @dblclick="selectSingleRow(props.row)"
@@ -260,7 +266,7 @@
             <AgentActionMenu :agent="props.row" />
           </q-menu>
 
-          <q-td v-for="col in props.cols" :key="col.name" :props="props">
+          <q-td v-for="col in props.cols" :key="col.name" :props="props" :class="col.classes">
             <!-- selection checkbox -->
             <template v-if="col.name === 'selection'">
               <q-checkbox
@@ -520,7 +526,8 @@ const {
 import { runURLAction } from "src/core/settings/api";
 
 // setup dashboard store
-const { tableHeight, selectedClientSiteNode, dashboardSettings, formatDate, draggingAgent } = useDashboardStore();
+const { tableHeight, selectedClientSiteNode, dashboardSettings, formatDate, draggingAgent } =
+  useDashboardStore();
 import { getTimeLapse } from "src/utils/format";
 
 // ui imports
@@ -551,10 +558,39 @@ const filterChecksFailing = ref(false);
 const filterRebootNeeded = ref(false);
 
 const columns: TacticalColumn[] = [
-  { name: "selection", field: "", align: "left", label: "", sortable: false, required: true },
-  { name: "smsalert", align: "left", label: "SMS Alert", field: "", sortable: false },
-  { name: "emailalert", align: "left", label: "Email Alert", field: "", sortable: false },
-  { name: "dashboardalert", align: "left", label: "Dashboard Alert", field: "", sortable: false },
+  {
+    name: "selection",
+    field: "",
+    align: "left",
+    label: "",
+    sortable: false,
+    required: true,
+    classes: "col-selection",
+  },
+  {
+    name: "smsalert",
+    align: "left",
+    label: "SMS Alert",
+    field: "",
+    sortable: false,
+    classes: "col-alert",
+  },
+  {
+    name: "emailalert",
+    align: "left",
+    label: "Email Alert",
+    field: "",
+    sortable: false,
+    classes: "col-alert",
+  },
+  {
+    name: "dashboardalert",
+    align: "left",
+    label: "Dashboard Alert",
+    field: "",
+    sortable: false,
+    classes: "col-alert",
+  },
   { name: "plat", label: "Platform", field: "plat", sortable: true, align: "left" },
   {
     name: "mon-type",
@@ -885,5 +921,25 @@ function onAgentDragEnd() {
 }
 .agent-drag-handle:active {
   cursor: grabbing;
+}
+
+/* Extra space after selection checkbox column (always first, not reorderable) */
+:deep(.col-selection),
+:deep(.q-table td:first-child) {
+  padding-right: 12px;
+}
+
+/* Tighter, equal spacing for SMS, Email, Dashboard alert columns */
+:deep(.col-alert) {
+  padding-left: 2px;
+  padding-right: 2px;
+  width: 2px;
+  white-space: nowrap;
+}
+
+:deep(.col-alert .q-checkbox__inner),
+:deep(.col-alert .q-icon) {
+  margin-left: -4px;
+  margin-right: -4px;
 }
 </style>
