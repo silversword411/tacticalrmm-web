@@ -194,10 +194,17 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useStorage } from "@vueuse/core";
 import { useQuasar, useDialogPluginComponent, QInput } from "quasar";
-import { useAuthStore, useUserStore, useDashboardStore } from "src/stores/api";
+import { useAuthStore, useUserStore, useRoleStore, useDashboardStore } from "src/stores/api";
 
 const { users, userCount, getUsers, updateUser, removeUser, adminResetMFA } = useUserStore();
+const { roles, getRoles: loadRoles } = useRoleStore();
 const { formatDate } = useDashboardStore();
+
+function getRoleName(roleId: number | null | undefined): string {
+  if (!roleId) return "";
+  const role = roles.value.find((r) => r.id === roleId);
+  return role ? role.name : "";
+}
 
 // ui imports
 import UserForm from "./UserForm.vue";
@@ -248,6 +255,14 @@ const columns: TacticalColumn[] = [
     field: "email",
     align: "left",
     sortable: true,
+  },
+  {
+    name: "role",
+    label: "Role",
+    field: "role",
+    align: "left",
+    sortable: true,
+    format: (val: number | null) => getRoleName(val),
   },
   {
     name: "last_login",
@@ -374,6 +389,7 @@ function reset2FA(user: User) {
 
 onMounted(() => {
   getUsers();
+  loadRoles();
   window.addEventListener("keydown", onGlobalKeydown);
 });
 </script>
