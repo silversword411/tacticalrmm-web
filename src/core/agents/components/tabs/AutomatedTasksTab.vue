@@ -346,7 +346,6 @@ const columns: TacticalColumn[] = [
     label: "More Info",
     field: "more_info",
     align: "left",
-    sortable: true,
   },
   {
     name: "datetime",
