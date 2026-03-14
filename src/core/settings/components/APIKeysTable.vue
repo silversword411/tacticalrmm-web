@@ -164,7 +164,7 @@ function editAPIKey(key: APIKey) {
   $q.dialog({
     component: APIKeysForm,
     componentProps: {
-      APIKey: key,
+      apiKey: key,
     },
   });
 }

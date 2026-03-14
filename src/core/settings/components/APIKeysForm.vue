@@ -87,25 +87,26 @@ const { userOptions } = useUserDropdown();
 // setup api key form logic
 const localKey = props.apiKey
   ? reactive<APIKey>(Object.assign({}, props.apiKey))
-  : reactive<APIKey>({ name: "", expiration: "", key: "", user: 0 });
+  : reactive<APIKey>({ name: "", expiration: null, key: "", user: 0 });
 
 // remove Z from date string
-if (props.apiKey) {
+if (props.apiKey && localKey.expiration) {
   localKey.expiration = formatDateInputField(localKey.expiration);
 }
 
 async function submit() {
   try {
     // convert date to local timezone if exists
-    if (localKey.expiration)
-      localKey.expiration = formatDateStringwithTimezone(localKey.expiration);
+    localKey.expiration = localKey.expiration
+      ? formatDateStringwithTimezone(localKey.expiration)
+      : null;
 
     if (props.apiKey && localKey.id) await updateAPIKey(localKey.id, localKey);
     else await addAPIKey(localKey);
 
     onDialogOK();
   } catch {
-    localKey.expiration = formatDateInputField(localKey.expiration);
+    if (localKey.expiration) localKey.expiration = formatDateInputField(localKey.expiration);
   }
 }
 </script>

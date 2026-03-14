@@ -111,7 +111,7 @@ export interface APIKey {
   name: string;
   key: string;
   user: number;
-  expiration: string;
+  expiration: string | null;
   created_time?: string;
 }
 
