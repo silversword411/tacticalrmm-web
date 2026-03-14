@@ -18,12 +18,7 @@ export function useAgentDropdown() {
 
   // Returns numeric id as value (for exclusions)
   const agentOptionsById = computed(() => {
-    return dropdownAgents.value
-      .map(({ hostname, id }) => ({
-        label: hostname,
-        value: id,
-      }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+    return _formatAgentOptions(dropdownAgents.value, (agent) => agent.id);
   });
 
   onMounted(agentStore.getDropdownAgents);
@@ -35,11 +30,14 @@ export function useAgentDropdown() {
   };
 }
 
-export function _formatAgentOptions(data: Agent[]): Option[] {
-  const agents = data.map(({ hostname, agent_id, client_name, site_name }) => ({
-    label: hostname,
-    value: agent_id,
-    category: `${client_name} > ${site_name}`,
+export function _formatAgentOptions(
+  data: Agent[],
+  getValue: (agent: Agent) => string | number = (agent) => agent.agent_id,
+): Option[] {
+  const agents = data.map((agent) => ({
+    label: agent.hostname,
+    value: getValue(agent),
+    category: `${agent.client_name} > ${agent.site_name}`,
   }));
 
   agents.sort((a, b) => a.label.localeCompare(b.label));

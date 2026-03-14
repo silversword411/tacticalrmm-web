@@ -99,7 +99,12 @@ function filterFn(val: string, update: (callback: () => void) => void) {
       }
 
       if (isSelectableOption(option)) {
-        return option.label.toLowerCase().indexOf(needle) > -1;
+        return (
+          option.label.toLowerCase().indexOf(needle) > -1 ||
+          ("category" in option && typeof option.category === "string"
+            ? option.category.toLowerCase().indexOf(needle) > -1
+            : false)
+        );
       }
       return false;
     });

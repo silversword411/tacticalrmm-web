@@ -90,6 +90,7 @@ export function useScheduleDropdown() {
 
   const scheduleOptions = computed(() =>
     schedules.value.map((schedule) => ({
+      type: "option" as const,
       label: schedule.name,
       value: schedule.id,
     })),
