@@ -35,7 +35,7 @@
         </q-tabs>
         <q-space />
 
-        <template v-if="selectedAgentIds.length > 0">
+        <template v-if="selectedAgentIds.length > 1">
           <div class="text-subtitle2 q-mr-sm">{{ selectedAgentIds.length }} selected</div>
           <q-btn dense flat icon="clear" size="sm" class="q-mr-md" @click="selectedAgentIds = []">
             <q-tooltip>Clear selection</q-tooltip>
@@ -939,7 +939,7 @@ function onAgentDragEnd() {
 
 :deep(.col-alert .q-checkbox__inner),
 :deep(.col-alert .q-icon) {
-  margin-left: -4px;
-  margin-right: -4px;
+  margin-left: -3px;
+  margin-right: -3px;
 }
 </style>
