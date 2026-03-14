@@ -63,7 +63,7 @@
 </template>
 <script lang="ts" setup>
 // composition imports
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 
 // type imports
 import { type Option, isHeaderOption, isSelectableOption } from "src/core/dashboard/types";
@@ -80,6 +80,10 @@ const value = defineModel<number | string | string[] | null>({ required: true })
 const filtered = ref(false);
 const focused = ref(false);
 const displayedOptions = ref<(Option | string)[] | undefined>(props.options);
+
+watch(() => props.options, (newOptions) => {
+  displayedOptions.value = newOptions;
+});
 
 function filterFn(val: string, update: (callback: () => void) => void) {
   update(() => {

@@ -33,6 +33,13 @@ export type AuditObjectType =
   | "keystore"
   | "customfield";
 
+export interface AuditLogSite {
+  id: number;
+  client_name: string;
+  name: string;
+  client: number;
+}
+
 export interface AuditLog {
   id: number;
   username: string;
@@ -45,6 +52,8 @@ export interface AuditLog {
   after_value: Record<string, any> | null;
   message: string | null;
   debug_info: Record<string, any> | null;
+  site: AuditLogSite | null;
+  ip_address: string | null;
 }
 
 export interface Pagination {

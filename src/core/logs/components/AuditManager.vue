@@ -134,7 +134,7 @@ import { formatDate, formatTableColumnText } from "src/utils/format";
 import AuditLogDetailModal from "./AuditLogDetailModal.vue";
 
 // types
-import type { AuditAction, AuditLog, GetAuditLogRequest, Pagination } from "../types";
+import type { AuditAction, AuditLog, AuditLogSite, GetAuditLogRequest, Pagination } from "../types";
 import type { TacticalColumn } from "src/core/dashboard/types";
 
 // static data
@@ -167,7 +167,7 @@ const columns: TacticalColumn[] = [
     field: "site",
     align: "left",
     sortable: true,
-    format: (val: string) => (val ? val : ""),
+    format: (val: AuditLogSite | null) => val?.client_name ?? "",
   },
   {
     name: "site",
@@ -175,7 +175,7 @@ const columns: TacticalColumn[] = [
     field: "site",
     align: "left",
     sortable: true,
-    format: (val: string) => (val ? val : ""),
+    format: (val: AuditLogSite | null) => val?.name ?? "",
   },
   {
     name: "action",
