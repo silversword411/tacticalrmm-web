@@ -35,7 +35,9 @@
               <template #default-header="props">
                 <div
                   class="row items-center"
-                  :class="{ 'drag-drop-target': !props.node.children && dropTargetNode === props.node.raw }"
+                  :class="{
+                    'drag-drop-target': !props.node.children && dropTargetNode === props.node.raw,
+                  }"
                   @dragenter.prevent="onTreeNodeDragEnter($event, props.node)"
                   @dragover.prevent="onTreeNodeDragOver($event, props.node)"
                   @dragleave="onTreeNodeDragLeave(props.node)"
@@ -202,6 +204,7 @@
           horizontal
           after-class="hide-scrollbar"
           before-class="hide-scrollbar"
+          separator-class="splitter-separator"
           emit-immediately
           @update:model-value="setTableHeight(innerModel)"
         >
@@ -223,7 +226,14 @@
 <script lang="ts" setup>
 import { ref, computed, onMounted } from "vue";
 import { useQuasar, QTree } from "quasar";
-import { useDashboardStore, useClientStore, useSiteStore, useURLActionStore, runURLAction, useAgentStore } from "src/stores/api";
+import {
+  useDashboardStore,
+  useClientStore,
+  useSiteStore,
+  useURLActionStore,
+  runURLAction,
+  useAgentStore,
+} from "src/stores/api";
 
 const { clients, removeClient, getClients } = useClientStore();
 const { removeSite } = useSiteStore();
@@ -515,5 +525,13 @@ onMounted(() => {
   background-color: rgba(25, 118, 210, 0.15);
   border-radius: 4px;
   outline: 2px dashed #1976d2;
+}
+
+.splitter-separator {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+.body--dark .splitter-separator {
+  background: rgba(255, 255, 255, 0.5) !important;
 }
 </style>

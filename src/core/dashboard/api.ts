@@ -3,7 +3,7 @@ import { ref, reactive, watch, computed } from "vue";
 import axios from "axios";
 import { useLocalStorage, useStorage } from "@vueuse/core";
 import { formatDate as formatDateUtil } from "src/utils/format";
-import { Dark, LoadingBar, Screen } from "quasar";
+import { Dark, LoadingBar } from "quasar";
 import { useDashWSConnection } from "src/websocket/websocket";
 import { useAgentStore } from "src/core/agents/api";
 import { useClientStore } from "src/core/clients/api";
@@ -109,7 +109,6 @@ function createDashboardStore() {
 
   // State - UI Layout
   const tabHeight = ref(300);
-  const tableHeight = ref(300);
   const selectedClientSiteNode = ref<string | null>(null);
   const draggingAgent = ref<Agent | null>(null);
 
@@ -260,9 +259,6 @@ function createDashboardStore() {
 
   // Utilities
   function setTableHeight(val: number) {
-    // top toolbar is 50px, filebar is 40px, agent filter tabs are 44px
-    tableHeight.value = Math.floor(Screen.height - 50 - 40 - 90 - val);
-
     // q-tabs are 37px
     tabHeight.value = Math.floor(val - 37);
   }
@@ -283,7 +279,6 @@ function createDashboardStore() {
     dashboardSettings,
 
     // State - UI Layout
-    tableHeight,
     tabHeight,
     selectedClientSiteNode,
     draggingAgent,

@@ -1,9 +1,9 @@
 <template>
-  <div class="q-pa-none q-pl-xs" @mousedown="onTableMousedown">
+  <div class="q-pa-none q-pl-xs" style="height: 100%" @mousedown="onTableMousedown">
     <tactical-table
       v-model:pagination="pagination"
       dense
-      :table-style="{ 'max-height': `${tableHeight}px` }"
+      class="fit"
       :rows="agents"
       :columns="columns"
       row-key="id"
@@ -542,7 +542,7 @@ const {
 import { runURLAction } from "src/core/settings/api";
 
 // setup dashboard store
-const { tableHeight, selectedClientSiteNode, dashboardSettings, formatDate, draggingAgent } =
+const { selectedClientSiteNode, dashboardSettings, formatDate, draggingAgent } =
   useDashboardStore();
 import { getTimeLapse } from "src/utils/format";
 
