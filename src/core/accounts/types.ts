@@ -16,7 +16,7 @@ export interface User {
   block_dashboard_login?: boolean;
   dark_mode?: boolean;
   show_community_scripts?: boolean;
-  dblclick_action?: AgentDblClickAction;
+  agent_dblclick_action?: AgentDblClickAction;
   url_action?: number | null;
   default_agent_tbl_tab?: AgentTableTab;
   agents_per_page?: number;

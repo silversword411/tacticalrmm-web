@@ -27,7 +27,7 @@
                   <div class="col-6">Agent double-click action:</div>
                   <div class="col-2"></div>
                   <q-select
-                    v-model="state.dblclick_action"
+                    v-model="state.agent_dblclick_action"
                     map-options
                     emit-value
                     filled
@@ -38,7 +38,7 @@
                     @update:model-value="state.url_action = null"
                   />
                 </q-card-section>
-                <q-card-section v-if="state.dblclick_action === 'urlaction'" class="row">
+                <q-card-section v-if="state.agent_dblclick_action === 'urlaction'" class="row">
                   <div class="col-6">URL Action:</div>
                   <div class="col-2"></div>
                   <q-select
@@ -251,7 +251,7 @@ const loadingBarColors = [
 const { webActionOptions } = useURLActionDropdown();
 
 const state = reactive<Partial<User>>({
-  dblclick_action: dashboardSettings.agentDblClickAction,
+  agent_dblclick_action: dashboardSettings.agentDblClickAction,
   url_action: dashboardSettings.agentUrlAction,
   default_agent_tbl_tab: dashboardSettings.defaultAgentTblTab,
   client_tree_sort: dashboardSettings.clientTreeSort,
