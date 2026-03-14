@@ -50,6 +50,7 @@ export interface DashboardSettings {
   dashWarningColor: string;
   dashInfoColor: string;
   darkMode: Ref<boolean>;
+  agentContextMenuQuadrant: Ref<boolean>;
   loadingBarColor: string;
   dateFormat: string;
   timezoneOptions: string[];
@@ -101,6 +102,7 @@ function createDashboardStore() {
     dashInfoColor: "info",
     loadingBarColor: "",
     darkMode: useStorage("darkMode", false),
+    agentContextMenuQuadrant: useStorage("agentContextMenuQuadrant", false),
     dateFormat: "MMM-DD-YYYY - HH:mm",
     timezoneOptions: [],
   });

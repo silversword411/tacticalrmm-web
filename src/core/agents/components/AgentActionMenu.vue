@@ -228,27 +228,11 @@
 </template>
 
 <script lang="ts" setup>
-// composition imports
 import { onMounted } from "vue";
-import { useQuasar } from "quasar";
-import { useURLActionStore, runURLAction, useAgentStore, useCheckStore, useWindowsUpdateStore } from "src/stores/api";
+import { useURLActionStore, runURLAction } from "src/stores/api";
 import { useScriptDropdown } from "src/core/scripts/composables";
-
-const { webActions, getURLActions } = useURLActionStore();
-const { updateAgent, wakeUpWOL, runTakeControl, runRemoteBackground, runWebVNC, agentRebootNow, agentShutdown, sendAgentPing, removeAgent } = useAgentStore();
-const { runAgentChecks } = useCheckStore();
-const { runAgentUpdateScan, runAgentUpdateInstall } = useWindowsUpdateStore();
-
-// ui imports
-import PendingActions from "src/core/logs/components/PendingActions.vue";
-import AgentRecovery from "./AgentRecovery.vue";
-import PolicyAdd from "src/core/automation/components/PolicyAdd.vue";
-import RebootLater from "./RebootLater.vue";
-import EditAgent from "./EditAgent.vue";
-import SendCommand from "./SendCommand.vue";
-import RunScript from "./RunScript.vue";
+import { useAgentActions } from "src/core/agents/composables";
 import IntegrationsContextMenu from "src/core/dashboard/ui/IntegrationsContextMenu.vue";
-import ConfirmYesDialog from "./ConfirmYesDialog.vue";
 
 import type { Agent } from "../types";
 
@@ -256,195 +240,29 @@ defineProps<{
   agent: Agent;
 }>();
 
-// setup dropdowns
+const { webActions, getURLActions } = useURLActionStore();
 const { favoriteScriptOptions } = useScriptDropdown();
 
-// setup quasar
-const $q = useQuasar();
-
-function showEditAgent(agentId: string) {
-  $q.dialog({
-    component: EditAgent,
-    componentProps: {
-      agentId: agentId,
-    },
-  });
-}
-
-function showPendingActionsModal(agent: Agent) {
-  $q.dialog({
-    component: PendingActions,
-    componentProps: {
-      agent: agent,
-    },
-  });
-}
-
-function showSendCommand(agent: Agent) {
-  $q.dialog({
-    component: SendCommand,
-    componentProps: {
-      agent: agent,
-    },
-  });
-}
-
-function showRunScript(agent: Agent, script: number | undefined = undefined) {
-  $q.dialog({
-    component: RunScript,
-    componentProps: {
-      agent,
-      script,
-    },
-  });
-}
-
-function toggleMaintenance(agent: Agent) {
-  const data = {
-    maintenance_mode: !agent.maintenance_mode,
-  };
-  void updateAgent(agent.agent_id, data);
-}
-
-function runPatchStatusScan(agent: Agent) {
-  void runAgentUpdateScan(agent.agent_id);
-}
-
-function installPatches(agent: Agent) {
-  void runAgentUpdateInstall(agent.agent_id);
-}
-
-function runChecks(agent: Agent) {
-  void runAgentChecks(agent.agent_id);
-}
-
-function wakeUp(agent: Agent) {
-  void wakeUpWOL(agent.agent_id);
-}
-
-function showRebootLaterModal(agent: Agent) {
-  $q.dialog({
-    component: RebootLater,
-    componentProps: {
-      agent: agent,
-    },
-  });
-}
-
-function launchWebVNC(agentId: string) {
-  $q.dialog({
-    title: "VNC Server Port",
-    message: "Enter the VNC server port:",
-    prompt: {
-      model: "5900",
-      type: "text",
-    },
-    cancel: true,
-    ok: { label: "Launch", color: "primary" },
-    noBackdropDismiss: true,
-  }).onOk((port) => {
-    runWebVNC(agentId, port);
-  });
-}
-
-function rebootNow(agent: Agent) {
-  $q.dialog({
-    title: "Are you sure?",
-    message: `Reboot ${agent.hostname} now`,
-    cancel: true,
-    noBackdropDismiss: true,
-  }).onOk(() => {
-    void agentRebootNow(agent.agent_id);
-  });
-}
-
-function shutdown(agent: Agent) {
-  $q.dialog({
-    component: ConfirmYesDialog,
-    componentProps: {
-      hostname: agent.hostname,
-      actionVerb: "shutdown",
-      title: "Confirm Shutdown",
-      okLabel: "Shutdown",
-      okColor: "negative",
-    },
-  }).onOk(() => {
-    void agentShutdown(agent.agent_id);
-  });
-}
-
-function showPolicyAdd(agent: Agent) {
-  $q.dialog({
-    component: PolicyAdd,
-    componentProps: {
-      type: "agent",
-      object: agent,
-    },
-  });
-}
-
-function showAgentRecovery(agent: Agent) {
-  $q.dialog({
-    component: AgentRecovery,
-    componentProps: {
-      agent: agent,
-    },
-  });
-}
-
-function handleRemoveAgent(event: Event, agent: Agent) {
-  if ((event as MouseEvent).shiftKey && agent.status === "overdue") {
-    $q.dialog({
-      title: "Confirm Delete",
-      message: `Are you sure you want to delete ${agent.hostname}? The agent will need to be manually uninstalled from the computer.`,
-      cancel: { label: "No", color: "primary" },
-      ok: { label: "Yes", color: "negative" },
-      noBackdropDismiss: true,
-    }).onOk(() => {
-      void removeAgent(agent.agent_id);
-    });
-  } else {
-    void pingAgent(agent);
-  }
-}
-
-async function pingAgent(agent: Agent) {
-  $q.loading.show();
-  const result = await sendAgentPing(agent.agent_id);
-  $q.loading.hide();
-  if (result === "online") {
-    deleteAgent(agent);
-  } else {
-    $q.dialog({
-      title: "Agent offline",
-      message: `${agent.hostname} cannot be contacted.
-                  Would you like to continue with the uninstall?
-                  If so, the agent will need to be manually uninstalled from the computer.`,
-      cancel: { label: "No", color: "negative" },
-      ok: { label: "Yes", color: "positive" },
-      noBackdropDismiss: true,
-    })
-      .onOk(() => deleteAgent(agent))
-      .onCancel(() => {
-        return;
-      });
-  }
-}
-
-function deleteAgent(agent: Agent) {
-  $q.dialog({
-    component: ConfirmYesDialog,
-    componentProps: {
-      hostname: agent.hostname,
-      actionVerb: "deletion",
-      title: "Confirm Deletion",
-      okLabel: "Uninstall",
-      okColor: "negative",
-    },
-  }).onOk(() => {
-    void removeAgent(agent.agent_id);
-  });
-}
+const {
+  showEditAgent,
+  showPendingActionsModal,
+  showSendCommand,
+  showRunScript,
+  toggleMaintenance,
+  runPatchStatusScan,
+  installPatches,
+  runChecks,
+  wakeUp,
+  showRebootLaterModal,
+  launchWebVNC,
+  rebootNow,
+  shutdown,
+  showPolicyAdd,
+  showAgentRecovery,
+  handleRemoveAgent,
+  runTakeControl,
+  runRemoteBackground,
+} = useAgentActions();
 
 onMounted(() => {
   getURLActions();

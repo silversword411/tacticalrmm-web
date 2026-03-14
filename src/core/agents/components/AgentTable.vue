@@ -1,5 +1,5 @@
 <template>
-  <div class="q-pa-none q-pl-xs">
+  <div class="q-pa-none q-pl-xs" @mousedown="onTableMousedown">
     <tactical-table
       v-model:pagination="pagination"
       dense
@@ -258,14 +258,10 @@
                 : 'highlight'
               : ''
           "
-          @contextmenu="selectRow(props.row)"
+          @contextmenu.prevent="onContextMenu($event, props.row)"
           @click="selectRow(props.row)"
           @dblclick="selectSingleRow(props.row)"
         >
-          <q-menu context-menu>
-            <AgentActionMenu :agent="props.row" />
-          </q-menu>
-
           <q-td v-for="col in props.cols" :key="col.name" :props="props" :class="col.classes">
             <!-- selection checkbox -->
             <template v-if="col.name === 'selection'">
@@ -503,11 +499,31 @@
         </q-tr>
       </template>
     </tactical-table>
+
+    <q-menu
+      v-if="!dashboardSettings.agentContextMenuQuadrant"
+      ref="contextMenuRef"
+      no-parent-event
+      touch-position
+      class="agent-context-menu"
+      @show="adjustContextMenuPosition"
+    >
+      <AgentActionMenu v-if="contextAgent" :agent="contextAgent" />
+    </q-menu>
+
+    <AgentQuadrantMenu
+      v-if="dashboardSettings.agentContextMenuQuadrant && contextAgent && quadrantMenuVisible && contextMenuEvent"
+      :agent="contextAgent"
+      :event="contextMenuEvent"
+      :visible="quadrantMenuVisible"
+      @close="quadrantMenuVisible = false; contextAgent = null"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import type { QMenu } from "quasar";
 import { useRoute } from "vue-router";
 import { useQuasar } from "quasar";
 import { useAgentStore, useDashboardStore } from "src/stores/api";
@@ -534,12 +550,62 @@ import { getTimeLapse } from "src/utils/format";
 import EditAgent from "./EditAgent.vue";
 import PendingActions from "src/core/logs/components/PendingActions.vue";
 import AgentActionMenu from "./AgentActionMenu.vue";
+import AgentQuadrantMenu from "./AgentQuadrantMenu.vue";
 
 // type imports
 import type { Agent, AgentSearchParams, AgentPagination, AgentMonitoringType } from "../types";
 import type { TacticalColumn } from "src/core/dashboard/types";
 
 const $q = useQuasar();
+
+const contextMenuRef = ref<InstanceType<typeof QMenu> | null>(null);
+const contextAgent = ref<Agent | null>(null);
+const contextMenuEvent = ref<MouseEvent | null>(null);
+const quadrantMenuVisible = ref(false);
+
+function onTableMousedown() {
+  contextMenuRef.value?.hide();
+}
+
+function onContextMenu(evt: MouseEvent, row: Agent) {
+  selectRow(row);
+  contextAgent.value = row;
+  contextMenuEvent.value = evt;
+
+  if (dashboardSettings.agentContextMenuQuadrant) {
+    quadrantMenuVisible.value = true;
+  } else if (contextMenuRef.value) {
+    const menuEl = document.querySelector<HTMLElement>(".agent-context-menu");
+    if (menuEl) menuEl.classList.remove("positioned");
+    contextMenuRef.value.hide();
+    void nextTick(() => {
+      contextMenuRef.value?.show(evt);
+    });
+  }
+}
+
+function adjustContextMenuPosition() {
+  void nextTick(() => {
+    const menuEl = document.querySelector<HTMLElement>(".agent-context-menu");
+    if (!menuEl || !contextMenuEvent.value) return;
+
+    menuEl.style.maxHeight = "none";
+
+    const menuHeight = menuEl.scrollHeight;
+    const viewportHeight = window.innerHeight;
+
+    if (menuHeight > viewportHeight - 8) {
+      menuEl.style.top = "4px";
+      menuEl.style.maxHeight = `${viewportHeight - 8}px`;
+    } else {
+      const clickY = contextMenuEvent.value.clientY;
+      const newTop = Math.min(clickY, viewportHeight - menuHeight - 4);
+      menuEl.style.top = `${Math.max(4, newTop)}px`;
+    }
+
+    menuEl.classList.add("positioned");
+  });
+}
 
 const tab = computed(() => dashboardSettings.defaultAgentTblTab);
 const dashInfoColor = computed(() => dashboardSettings.dashInfoColor);
@@ -941,5 +1007,11 @@ function onAgentDragEnd() {
 :deep(.col-alert .q-icon) {
   margin-left: -3px;
   margin-right: -3px;
+}
+</style>
+
+<style>
+.agent-context-menu:not(.positioned) {
+  visibility: hidden !important;
 }
 </style>

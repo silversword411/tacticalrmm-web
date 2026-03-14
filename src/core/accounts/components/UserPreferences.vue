@@ -191,6 +191,12 @@
                     label="Clear search field when switching client/site"
                   />
                 </q-card-section>
+                <q-card-section class="row">
+                  <q-checkbox
+                    v-model="dashboardSettings.agentContextMenuQuadrant"
+                    label="Use quadrant-style agent right-click menu"
+                  />
+                </q-card-section>
               </q-tab-panel>
             </q-tab-panels>
 

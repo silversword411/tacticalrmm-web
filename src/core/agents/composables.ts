@@ -1,7 +1,17 @@
 import { onMounted, computed, ref } from "vue";
+import { useQuasar } from "quasar";
 
-import { useAgentStore, useDashboardStore } from "src/stores/api";
+import { useAgentStore, useCheckStore, useWindowsUpdateStore, useDashboardStore } from "src/stores/api";
 import type { Option, SelectableOption } from "../dashboard/types";
+
+import PendingActions from "src/core/logs/components/PendingActions.vue";
+import AgentRecovery from "./components/AgentRecovery.vue";
+import PolicyAdd from "src/core/automation/components/PolicyAdd.vue";
+import RebootLater from "./components/RebootLater.vue";
+import EditAgent from "./components/EditAgent.vue";
+import SendCommand from "./components/SendCommand.vue";
+import RunScript from "./components/RunScript.vue";
+import ConfirmYesDialog from "./components/ConfirmYesDialog.vue";
 
 import type { Agent } from "./types";
 
@@ -65,8 +75,6 @@ export function useAgentDiskDropdown(agentId: string | null) {
   if (!agentId) return { agentDiskOptions: ref<string[]>([]) };
   const { selectedAgent } = agentStore;
 
-  console.log("Here?");
-
   const agentDiskOptions = computed(() => {
     if (selectedAgent.value?.disks) return selectedAgent.value.disks.map((disk) => disk.device);
     else return [];
@@ -116,3 +124,191 @@ export const agentPlatformOptions = [
   { value: "linux", label: "Linux" },
   { value: "darwin", label: "macOS" },
 ];
+
+export function useAgentActions() {
+  const $q = useQuasar();
+  const { updateAgent, wakeUpWOL, runTakeControl, runRemoteBackground, runWebVNC, agentRebootNow, agentShutdown, sendAgentPing, removeAgent } = useAgentStore();
+  const { runAgentChecks } = useCheckStore();
+  const { runAgentUpdateScan, runAgentUpdateInstall } = useWindowsUpdateStore();
+
+  function showEditAgent(agentId: string) {
+    $q.dialog({
+      component: EditAgent,
+      componentProps: { agentId },
+    });
+  }
+
+  function showPendingActionsModal(agent: Agent) {
+    $q.dialog({
+      component: PendingActions,
+      componentProps: { agent },
+    });
+  }
+
+  function showSendCommand(agent: Agent) {
+    $q.dialog({
+      component: SendCommand,
+      componentProps: { agent },
+    });
+  }
+
+  function showRunScript(agent: Agent, script: number | undefined = undefined) {
+    $q.dialog({
+      component: RunScript,
+      componentProps: { agent, script },
+    });
+  }
+
+  function toggleMaintenance(agent: Agent) {
+    void updateAgent(agent.agent_id, { maintenance_mode: !agent.maintenance_mode });
+  }
+
+  function runPatchStatusScan(agent: Agent) {
+    void runAgentUpdateScan(agent.agent_id);
+  }
+
+  function installPatches(agent: Agent) {
+    void runAgentUpdateInstall(agent.agent_id);
+  }
+
+  function runChecks(agent: Agent) {
+    void runAgentChecks(agent.agent_id);
+  }
+
+  function wakeUp(agent: Agent) {
+    void wakeUpWOL(agent.agent_id);
+  }
+
+  function showRebootLaterModal(agent: Agent) {
+    $q.dialog({
+      component: RebootLater,
+      componentProps: { agent },
+    });
+  }
+
+  function launchWebVNC(agentId: string) {
+    $q.dialog({
+      title: "VNC Server Port",
+      message: "Enter the VNC server port:",
+      prompt: { model: "5900", type: "text" },
+      cancel: true,
+      ok: { label: "Launch", color: "primary" },
+      noBackdropDismiss: true,
+    }).onOk((port) => {
+      runWebVNC(agentId, port);
+    });
+  }
+
+  function rebootNow(agent: Agent) {
+    $q.dialog({
+      title: "Are you sure?",
+      message: `Reboot ${agent.hostname} now`,
+      cancel: true,
+      noBackdropDismiss: true,
+    }).onOk(() => {
+      void agentRebootNow(agent.agent_id);
+    });
+  }
+
+  function shutdown(agent: Agent) {
+    $q.dialog({
+      component: ConfirmYesDialog,
+      componentProps: {
+        hostname: agent.hostname,
+        actionVerb: "shutdown",
+        title: "Confirm Shutdown",
+        okLabel: "Shutdown",
+        okColor: "negative",
+      },
+    }).onOk(() => {
+      void agentShutdown(agent.agent_id);
+    });
+  }
+
+  function showPolicyAdd(agent: Agent) {
+    $q.dialog({
+      component: PolicyAdd,
+      componentProps: { type: "agent", object: agent },
+    });
+  }
+
+  function showAgentRecovery(agent: Agent) {
+    $q.dialog({
+      component: AgentRecovery,
+      componentProps: { agent },
+    });
+  }
+
+  function handleRemoveAgent(event: Event, agent: Agent) {
+    if ((event as MouseEvent).shiftKey && agent.status === "overdue") {
+      $q.dialog({
+        title: "Confirm Delete",
+        message: `Are you sure you want to delete ${agent.hostname}? The agent will need to be manually uninstalled from the computer.`,
+        cancel: { label: "No", color: "primary" },
+        ok: { label: "Yes", color: "negative" },
+        noBackdropDismiss: true,
+      }).onOk(() => {
+        void removeAgent(agent.agent_id);
+      });
+    } else {
+      void pingAgent(agent);
+    }
+  }
+
+  async function pingAgent(agent: Agent) {
+    $q.loading.show();
+    const result = await sendAgentPing(agent.agent_id);
+    $q.loading.hide();
+    if (result === "online") {
+      deleteAgent(agent);
+    } else {
+      $q.dialog({
+        title: "Agent offline",
+        message: `${agent.hostname} cannot be contacted.
+                  Would you like to continue with the uninstall?
+                  If so, the agent will need to be manually uninstalled from the computer.`,
+        cancel: { label: "No", color: "negative" },
+        ok: { label: "Yes", color: "positive" },
+        noBackdropDismiss: true,
+      })
+        .onOk(() => deleteAgent(agent))
+        .onCancel(() => { return; });
+    }
+  }
+
+  function deleteAgent(agent: Agent) {
+    $q.dialog({
+      component: ConfirmYesDialog,
+      componentProps: {
+        hostname: agent.hostname,
+        actionVerb: "deletion",
+        title: "Confirm Deletion",
+        okLabel: "Uninstall",
+        okColor: "negative",
+      },
+    }).onOk(() => {
+      void removeAgent(agent.agent_id);
+    });
+  }
+
+  return {
+    showEditAgent,
+    showPendingActionsModal,
+    showSendCommand,
+    showRunScript,
+    toggleMaintenance,
+    runPatchStatusScan,
+    installPatches,
+    runChecks,
+    wakeUp,
+    showRebootLaterModal,
+    launchWebVNC,
+    rebootNow,
+    shutdown,
+    showPolicyAdd,
+    showAgentRecovery,
+    handleRemoveAgent,
+    runTakeControl,
+    runRemoteBackground,
+  };
+}
