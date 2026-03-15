@@ -37,6 +37,7 @@
                   class="row items-center"
                   :class="{
                     'drag-drop-target': !props.node.children && dropTargetNode === props.node.raw,
+                    'drag-expand-target': props.node.children && expandTargetNode === props.node.raw,
                   }"
                   @dragenter.prevent="onTreeNodeDragEnter($event, props.node)"
                   @dragover.prevent="onTreeNodeDragOver($event, props.node)"
@@ -224,7 +225,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, useTemplateRef } from "vue";
 import { useQuasar, QTree } from "quasar";
 import {
   useDashboardStore,
@@ -270,6 +271,17 @@ const $q = useQuasar();
 
 const innerModel = ref(($q.screen.height - 82) / 2);
 const dropTargetNode = ref<string | null>(null);
+const expandTargetNode = ref<string | null>(null);
+const tree = useTemplateRef<QTree>("tree");
+let dragExpandTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearDragExpandTimer() {
+  if (dragExpandTimer) {
+    clearTimeout(dragExpandTimer);
+    dragExpandTimer = null;
+  }
+  expandTargetNode.value = null;
+}
 
 const clientTree = computed((): ClientTreeNode[] => {
   const output: ClientTreeNode[] = [];
@@ -442,25 +454,35 @@ const urlActions = computed(() => {
 });
 
 function onTreeNodeDragEnter(event: DragEvent, node: ClientTreeNode) {
-  if (!draggingAgent.value || node.children) return;
+  if (!draggingAgent.value) return;
+  clearDragExpandTimer();
+  if (node.children) {
+    expandTargetNode.value = node.raw;
+    dragExpandTimer = setTimeout(() => {
+      if (tree.value && !tree.value.isExpanded(node.raw)) {
+        tree.value.setExpanded(node.raw, true);
+      }
+      expandTargetNode.value = null;
+    }, 600);
+    return;
+  }
   dropTargetNode.value = node.raw;
   if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
 }
 
 function onTreeNodeDragOver(event: DragEvent, node: ClientTreeNode) {
   if (!draggingAgent.value) return;
-  if (node.children) {
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "none";
-    return;
-  }
+  if (node.children) return;
   if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
 }
 
 function onTreeNodeDragLeave(node: ClientTreeNode) {
+  clearDragExpandTimer();
   if (dropTargetNode.value === node.raw) dropTargetNode.value = null;
 }
 
 function onTreeNodeDrop(event: DragEvent, node: ClientTreeNode) {
+  clearDragExpandTimer();
   dropTargetNode.value = null;
   const agent = draggingAgent.value;
   draggingAgent.value = null;
@@ -525,6 +547,12 @@ onMounted(() => {
   background-color: rgba(25, 118, 210, 0.15);
   border-radius: 4px;
   outline: 2px dashed #1976d2;
+}
+
+.drag-expand-target {
+  background-color: rgba(25, 118, 210, 0.08);
+  border-radius: 4px;
+  outline: 1px dashed #1976d2;
 }
 
 .splitter-separator {
