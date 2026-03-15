@@ -105,6 +105,15 @@
         </q-card-section>
         <q-card-actions align="left">
           <q-btn :label="installButtonText" color="primary" type="submit" />
+          <q-btn
+            v-if="isScriptMethod"
+            label="Copy script to clipboard"
+            icon="content_copy"
+            color="primary"
+            outline
+            :loading="copyLoading"
+            @click="copyScriptToClipboard"
+          />
         </q-card-actions>
       </q-form>
     </q-card>
@@ -112,12 +121,13 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, reactive, watch } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import axios from "axios";
 import { useSiteDropdown } from "src/core/clients/composables";
 import { getBaseUrl } from "src/boot/axios";
 import { GOARCH_AMD64, GOARCH_i386, GOARCH_ARM64, GOARCH_ARM32 } from "src/constants/constants";
+import { copyOutput } from "src/utils/helpers";
 
 // ui import
 import AgentDownload from "./AgentDownload.vue";
@@ -172,6 +182,31 @@ const agentInstallRequest = reactive({
   plat: "windows",
   api: getBaseUrl(),
 });
+
+const copyLoading = ref(false);
+
+const isScriptMethod = computed(
+  () =>
+    agentInstallRequest.installMethod === "powershell" ||
+    agentInstallRequest.installMethod === "bash",
+);
+
+async function copyScriptToClipboard() {
+  if (!client.value || !selectedSite.value) return;
+
+  copyLoading.value = true;
+  try {
+    const { data } = await axios.post("/agents/installer/", agentInstallRequest, {
+      responseType: "blob",
+    });
+    const text = await (data as Blob).text();
+    copyOutput(text);
+  } catch {
+    /* axios interceptors handle errors */
+  } finally {
+    copyLoading.value = false;
+  }
+}
 
 watch(
   () => agentInstallRequest.plat,
