@@ -106,27 +106,15 @@
           </tactical-dropdown>
         </q-card-section>
         <q-card-section v-if="mode === 'script'" class="q-pt-none">
-          <tactical-dropdown
+          <chip-input
             v-model="state.args"
-            label="Script Arguments (press Enter after typing each argument)"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
+            label="Script Arguments"
           />
         </q-card-section>
         <q-card-section v-if="mode === 'script'" class="q-pt-none">
-          <tactical-dropdown
+          <chip-input
             v-model="state.env_vars"
-            :label="envVarsLabel"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
+            label="Environment Variables (key=value)"
           />
         </q-card-section>
 
@@ -250,7 +238,8 @@ import { useAgentStore } from "src/stores/api";
 
 const { isLoading, runBulkAction } = useAgentStore();
 import { cmdPlaceholder } from "src/core/agents/composables";
-import { envVarsLabel, runAsUserToolTip } from "src/constants/constants";
+import { runAsUserToolTip } from "src/constants/constants";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 
 // type imports
 import type { BulkActionMode, RunBulkActionRequest } from "../types";

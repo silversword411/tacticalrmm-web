@@ -48,27 +48,15 @@
           </tactical-dropdown>
         </q-card-section>
         <q-card-section>
-          <tactical-dropdown
+          <chip-input
             v-model="state.args"
-            label="Script Arguments (press Enter after typing each argument)"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
+            label="Script Arguments"
           />
         </q-card-section>
         <q-card-section>
-          <tactical-dropdown
+          <chip-input
             v-model="state.env_vars"
-            :label="envVarsLabel"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
+            label="Environment Variables (key=value)"
           />
         </q-card-section>
         <q-card-section v-if="!state.run_on_server">
@@ -198,7 +186,8 @@ import { useAgentStore, useDashboardStore } from "src/stores/api";
 
 const { isLoading, runScript } = useAgentStore();
 const { dashboardSettings } = useDashboardStore();
-import { envVarsLabel, runAsUserToolTip } from "src/constants/constants";
+import { runAsUserToolTip } from "src/constants/constants";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 
 //ui imports
 import ScriptOutputCopyClip from "src/core/scripts/components/ScriptOutputCopyClip.vue";

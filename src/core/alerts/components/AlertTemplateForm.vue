@@ -183,34 +183,18 @@
                   filterable
                 />
 
-                <q-select
+                <chip-input
                   v-if="template.action_type !== 'rest'"
                   v-model="template.action_args"
                   class="q-mb-sm"
-                  dense
-                  label="Failure script arguments (press Enter after typing each argument)"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Failure Script Arguments"
                 />
 
-                <q-select
+                <chip-input
                   v-if="template.action_type !== 'rest'"
                   v-model="template.action_env_vars"
                   class="q-mb-sm"
-                  dense
-                  label="Failure script environment vars (press Enter after typing each key=value pair)"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Failure Environment Variables (key=value)"
                 />
 
                 <q-input
@@ -277,34 +261,18 @@
                   filterable
                 />
 
-                <q-select
+                <chip-input
                   v-if="template.resolved_action_type !== 'rest'"
                   v-model="template.resolved_action_args"
                   class="q-mb-sm"
-                  dense
-                  label="Resolved script arguments (press Enter after typing each argument)"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Resolved Script Arguments"
                 />
 
-                <q-select
+                <chip-input
                   v-if="template.resolved_action_type !== 'rest'"
                   v-model="template.resolved_action_env_vars"
                   class="q-mb-sm"
-                  dense
-                  label="Resolved action environment vars (press Enter after typing each key=value pair)"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Resolved Environment Variables (key=value)"
                 />
 
                 <q-input
@@ -697,6 +665,7 @@ import { useAlertTemplateStore, useDashboardStore } from "src/stores/api";
 const { isLoading, addAlertTemplate, updateAlertTemplate } = useAlertTemplateStore();
 const { dashboardSettings } = useDashboardStore();
 import { useScriptDropdown } from "src/core/scripts/composables";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 import { useURLActionDropdown } from "src/core/settings/composables";
 import { isValidEmail } from "src/utils/validation";
 

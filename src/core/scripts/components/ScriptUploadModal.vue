@@ -65,30 +65,16 @@
         </q-card-section>
 
         <q-card-section>
-          <tactical-dropdown
+          <chip-input
             v-model="script.args"
             label="Script Arguments"
-            placeholder="(press Enter after typing each argument)"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
           />
         </q-card-section>
 
         <q-card-section>
-          <tactical-dropdown
+          <chip-input
             v-model="script.env_vars"
-            label="Environment Variables"
-            placeholder="(press Enter after typing each key=value pair)"
-            filled
-            use-input
-            multiple
-            hide-dropdown-icon
-            input-debounce="0"
-            new-value-mode="add"
+            label="Environment Variables (key=value)"
           />
         </q-card-section>
 
@@ -121,6 +107,7 @@ import { useScriptStore } from "src/stores/api";
 const { isLoading, addScript } = useScriptStore();
 import { agentPlatformOptions } from "src/core/agents/composables";
 import { shellOptions } from "../composables";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 
 // import types
 import type { Script } from "../types";

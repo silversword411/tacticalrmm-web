@@ -94,26 +94,14 @@
               :readonly="readonly"
               hide-bottom-space
             />
-            <tactical-dropdown
+            <chip-input
               v-model="script.args"
-              label="Script Arguments (press Enter after typing each argument)"
-              filled
-              use-input
-              multiple
-              hide-dropdown-icon
-              input-debounce="0"
-              new-value-mode="add"
+              label="Script Arguments"
               :readonly="readonly"
             />
-            <tactical-dropdown
+            <chip-input
               v-model="script.env_vars"
-              :label="envVarsLabel"
-              filled
-              use-input
-              multiple
-              hide-dropdown-icon
-              input-debounce="0"
-              new-value-mode="add"
+              label="Environment Variables (key=value)"
               :readonly="readonly"
             />
             <q-input
@@ -225,7 +213,7 @@ import { useScriptStore, useDashboardStore } from "src/stores/api";
 const { isLoading, updateScript, addScript, getScriptContents } = useScriptStore();
 const { dashboardSettings } = useDashboardStore();
 import { shellOptions } from "../composables";
-import { envVarsLabel } from "src/constants/constants";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 // ui imports
 import TestScriptModal from "./TestScriptModal.vue";
 import * as monaco from "monaco-editor";

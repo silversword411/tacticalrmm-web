@@ -101,34 +101,18 @@
                   filterable
                 />
 
-                <q-select
+                <chip-input
                   v-if="action.type === 'script'"
                   v-model="action.script_args"
                   class="col-3"
-                  dense
-                  label="Script Arguments (press Enter after typing each argument)"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Script Arguments"
                 />
 
-                <q-select
+                <chip-input
                   v-if="action.type === 'script'"
                   v-model="action.env_vars"
                   class="col-3"
-                  dense
-                  :label="envVarsLabel"
-                  filled
-                  use-input
-                  use-chips
-                  multiple
-                  hide-dropdown-icon
-                  input-debounce="0"
-                  new-value-mode="add"
+                  label="Environment Variables (key=value)"
                 />
 
                 <q-input
@@ -748,7 +732,7 @@ import { useAgentCheckDropdown, usePolicyCheckDropdown } from "src/core/checks/c
 import { useCustomFieldDropdown } from "src/core/settings/composables";
 import { notifyError } from "src/utils/notify";
 import { validateTimePeriod } from "src/utils/validation";
-import { envVarsLabel } from "src/constants/constants";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 import { convertPeriodToSeconds, formatDateInputField } from "src/utils/format";
 
 // type imports

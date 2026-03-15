@@ -25,31 +25,17 @@
           />
         </q-card-section>
         <q-card-section>
-          <q-select
+          <chip-input
             v-model="localCheck.script_args"
-            dense
-            :readonly="readonly"
-            label="Script Arguments (press Enter after typing each argument)"
-            filled
-            use-input
-            use-chips
-            multiple
-            hide-dropdown-icon
-            new-value-mode="add"
+            :readonly="!!readonly"
+            label="Script Arguments"
           />
         </q-card-section>
         <q-card-section>
-          <q-select
+          <chip-input
             v-model="localCheck.env_vars"
-            dense
-            :readonly="readonly"
-            :label="envVarsLabel"
-            filled
-            use-input
-            use-chips
-            multiple
-            hide-dropdown-icon
-            new-value-mode="add"
+            :readonly="!!readonly"
+            label="Environment Variables (key=value)"
           />
         </q-card-section>
         <q-card-section>
@@ -144,7 +130,7 @@ import type { ScriptSelectableOption } from "src/core/scripts/composables";
 import { useScriptDropdown } from "src/core/scripts/composables";
 import { isHeaderOption } from "src/core/dashboard/types";
 import { validateRetcode } from "src/utils/validation";
-import { envVarsLabel } from "src/constants/constants";
+import ChipInput from "src/core/dashboard/ui/ChipInput.vue";
 
 // type imports
 import { isAgent, type Check } from "../types";
