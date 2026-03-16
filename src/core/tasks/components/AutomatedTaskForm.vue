@@ -156,9 +156,20 @@
                   style="width: 50px"
                   flat
                   dense
-                  icon="add"
-                  label="Add"
-                  color="primary"
+                  :icon="editingActionIndex !== null ? 'save' : 'add'"
+                  :label="editingActionIndex !== null ? 'Update' : 'Add'"
+                  :color="editingActionIndex !== null ? 'positive' : 'primary'"
+                />
+                <q-btn
+                  v-if="editingActionIndex !== null"
+                  class="col-1"
+                  style="width: 50px"
+                  flat
+                  dense
+                  icon="close"
+                  label="Cancel"
+                  color="negative"
+                  @click="cancelEditAction"
                 />
                 <q-input
                   v-if="action.shell === 'custom'"
@@ -239,12 +250,24 @@
                         </q-item-label>
                       </q-item-section>
                       <q-item-section side>
-                        <q-icon
-                          class="cursor-pointer"
-                          color="negative"
-                          name="close"
-                          @click="removeAction(index)"
-                        />
+                        <div class="row no-wrap q-gutter-x-xs">
+                          <q-icon
+                            class="cursor-pointer"
+                            color="primary"
+                            name="edit"
+                            @click="editAction(index)"
+                          >
+                            <q-tooltip>Edit action</q-tooltip>
+                          </q-icon>
+                          <q-icon
+                            class="cursor-pointer"
+                            color="negative"
+                            name="close"
+                            @click="removeAction(index)"
+                          >
+                            <q-tooltip>Remove action</q-tooltip>
+                          </q-icon>
+                        </div>
                       </q-item-section>
                     </q-item>
                   </template>
@@ -723,7 +746,7 @@
 
 <script lang="ts" setup>
 // composition imports
-import { computed, ref, watch, reactive, useTemplateRef, toRaw } from "vue";
+import { computed, ref, watch, reactive, useTemplateRef, toRaw, nextTick } from "vue";
 import { QForm, QStepper, useDialogPluginComponent, extend } from "quasar";
 import draggable from "vuedraggable";
 import { useTaskStore, usePolicyTasksStore } from "src/stores/api";
@@ -991,9 +1014,15 @@ const action = reactive<TaskAction>({
   timeout: 90,
 });
 
+const editingActionIndex = ref<number | null>(null);
+const skipScriptWatch = ref(false);
+
 watch(
   () => action.script,
   (newValue) => {
+    // skip auto-population when loading an action for editing
+    if (skipScriptWatch.value) return;
+
     // populate script default into action
     if (newValue) {
       const script = getScriptById(newValue);
@@ -1008,6 +1037,55 @@ watch(
   },
 );
 
+function resetActionForm() {
+  action.name = "";
+  action.type = "script";
+  action.script_args = [];
+  action.env_vars = [];
+  action.script = null;
+  action.command = "";
+  action.shell = "cmd";
+  action.timeout = 90;
+  custom_shell.value = "";
+  editingActionIndex.value = null;
+}
+
+function editAction(index: number) {
+  const existing = localTask.actions[index];
+  if (!existing) return;
+  skipScriptWatch.value = true;
+
+  action.type = existing.type;
+  action.name = existing.name;
+  action.script_args = existing.script_args ? [...existing.script_args] : [];
+  action.env_vars = existing.env_vars ? [...existing.env_vars] : [];
+  action.timeout = existing.timeout;
+  action.script = existing.script ?? null;
+  action.command = existing.command ?? "";
+
+  // detect custom shell
+  if (
+    existing.type === "cmd" &&
+    !["cmd", "powershell", "bash"].includes(existing.shell)
+  ) {
+    custom_shell.value = existing.shell;
+    action.shell = "custom";
+  } else {
+    action.shell = existing.shell;
+    custom_shell.value = "";
+  }
+
+  editingActionIndex.value = index;
+
+  void nextTick(() => {
+    skipScriptWatch.value = false;
+  });
+}
+
+function cancelEditAction() {
+  resetActionForm();
+}
+
 // function for adding script and commands to be run from task
 function addAction() {
   if (action.type === "script" && (!action.script || !action.timeout)) {
@@ -1021,23 +1099,29 @@ function addAction() {
   if (action.type === "cmd" && action.shell === "custom" && custom_shell.value)
     action.shell = custom_shell.value;
 
-  // create a non-reactive copy and push it to the actions array
-  localTask.actions.push({ ...toRaw(action) });
+  if (editingActionIndex.value !== null) {
+    // replace existing action
+    localTask.actions.splice(editingActionIndex.value, 1, { ...toRaw(action) });
+  } else {
+    // create a non-reactive copy and push it to the actions array
+    localTask.actions.push({ ...toRaw(action) });
+  }
 
-  // reset action
-  action.name = "";
-  action.type = "script";
-  action.script_args = [];
-  action.env_vars = [];
-  action.script = null;
-  action.command = "";
-  action.shell = "cmd";
-  action.timeout = 90;
-  custom_shell.value = "";
+  resetActionForm();
 }
 
 function removeAction(index: number) {
   localTask.actions.splice(index, 1);
+  // if we were editing the removed action, cancel edit
+  if (editingActionIndex.value === index) {
+    resetActionForm();
+  } else if (
+    editingActionIndex.value !== null &&
+    editingActionIndex.value > index
+  ) {
+    // adjust index if a preceding action was removed
+    editingActionIndex.value--;
+  }
 }
 
 async function submit() {
