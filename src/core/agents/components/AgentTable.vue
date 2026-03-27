@@ -523,6 +523,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
+import { useStorage } from "@vueuse/core";
 import type { QMenu } from "quasar";
 import { useRoute } from "vue-router";
 import { useQuasar } from "quasar";
@@ -769,7 +770,7 @@ watch(tab, () => {
   doSearch();
 });
 
-const pagination = ref<AgentPagination>({
+const pagination = useStorage<AgentPagination>("agent-table-pagination", {
   page: 1,
   rowsPerPage: 50,
   sortBy: "hostname",
