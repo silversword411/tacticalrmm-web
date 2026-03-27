@@ -8,8 +8,8 @@ export interface Client {
     error: boolean;
     warning: boolean;
   };
-  workstation_policy?: number;
-  server_policy?: number;
+  workstation_policy?: number | null;
+  server_policy?: number | null;
   alert_template?: number | null;
   patch_policy?: number;
   sites: Site[];
@@ -28,8 +28,8 @@ export interface Site {
     error: boolean;
     warning: boolean;
   };
-  workstation_policy?: number;
-  server_policy?: number;
+  workstation_policy?: number | null;
+  server_policy?: number | null;
   alert_template?: number | null;
   patch_policy?: number;
   maintenance_mode: boolean;

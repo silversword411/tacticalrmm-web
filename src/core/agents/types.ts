@@ -49,7 +49,7 @@ export interface Agent {
   site_name: string;
   site: number;
   client: number;
-  policy?: number;
+  policy?: number | null;
   patch_policy: number;
   custom_fields: AgentCustomFieldValue[];
   cpu_model: string[];

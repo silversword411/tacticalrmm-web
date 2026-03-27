@@ -128,32 +128,22 @@ async function submit() {
     if (props.type === "client") {
       const payload: Partial<Client> = {
         block_policy_inheritance: form.blockInheritance,
+        server_policy: form.selectedServerPolicy,
+        workstation_policy: form.selectedWorkstationPolicy,
       };
-      if (form.selectedServerPolicy !== null) {
-        payload.server_policy = form.selectedServerPolicy;
-      }
-      if (form.selectedWorkstationPolicy !== null) {
-        payload.workstation_policy = form.selectedWorkstationPolicy;
-      }
       await updateClient(props.object.id, payload);
     } else if (props.type === "site") {
       const payload: Partial<Site> = {
         block_policy_inheritance: form.blockInheritance,
+        server_policy: form.selectedServerPolicy,
+        workstation_policy: form.selectedWorkstationPolicy,
       };
-      if (form.selectedServerPolicy !== null) {
-        payload.server_policy = form.selectedServerPolicy;
-      }
-      if (form.selectedWorkstationPolicy !== null) {
-        payload.workstation_policy = form.selectedWorkstationPolicy;
-      }
       await updateSite(props.object.id, payload);
     } else if (props.type === "agent") {
       const payload: Partial<Agent> = {
         block_policy_inheritance: form.blockInheritance,
+        policy: form.selectedAgentPolicy,
       };
-      if (form.selectedAgentPolicy !== null) {
-        payload.policy = form.selectedAgentPolicy;
-      }
       await updateAgent(props.object.agent_id!, payload);
     }
     onDialogOK();

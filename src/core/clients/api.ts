@@ -101,7 +101,7 @@ function createClientStore() {
     isLoading.value = true;
     isError.value = false;
     try {
-      const { data } = await axios.put<Client>(`/clients/${id}/`, payload);
+      const { data } = await axios.patch<Client>(`/clients/${id}/`, payload);
       const index = clients.value.findIndex((client: Client) => client.id === id);
       if (index !== -1) {
         clients.value[index] = data;
@@ -223,7 +223,7 @@ function createSiteStore() {
     isLoading.value = true;
     isError.value = false;
     try {
-      const { data } = await axios.put<Site>(`/clients/sites/${id}/`, payload);
+      const { data } = await axios.patch<Site>(`/clients/sites/${id}/`, payload);
       // add to this site store
       const index = sites.value.findIndex((site) => site.id === id);
       if (index !== -1) {
