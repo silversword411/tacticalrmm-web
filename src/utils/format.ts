@@ -132,6 +132,7 @@ export function formatTableColumnText(text: string) {
 }
 
 export function truncateText(txt: string, chars: number) {
+  if (!txt) return "";
   return txt.length >= chars ? txt.substring(0, chars) + "..." : txt;
 }
 
