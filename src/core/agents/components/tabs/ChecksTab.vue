@@ -415,6 +415,7 @@
 <script lang="ts" setup>
 // composition imports
 import { ref, computed, watch, onMounted } from "vue";
+import { useStorage } from "@vueuse/core";
 import { useQuasar } from "quasar";
 import { useAgentStore, useCheckStore, useDashboardStore } from "src/stores/api";
 
@@ -872,7 +873,7 @@ const $q = useQuasar();
 //const refreshDashboard = inject("refreshDashboard");
 
 // setup checks tab logic
-const pagination = ref({
+const pagination = useStorage("agent-checks-tab-pagination", {
   rowsPerPage: 0,
   sortBy: "status",
   descending: false,
