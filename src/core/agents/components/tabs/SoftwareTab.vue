@@ -108,9 +108,18 @@ const columns: TacticalColumn[] = [
     align: "left",
     label: "Installed On",
     field: "install_date",
-    sortable: false,
+    sortable: true,
     format: (val) => {
       return val === "01/01/1" || val === "01-1-01" ? "" : val;
+    },
+    sort: (a: string, b: string) => {
+      const invalidDates = ["01/01/1", "01-1-01", ""];
+      const aInvalid = invalidDates.includes(a) || !a;
+      const bInvalid = invalidDates.includes(b) || !b;
+      if (aInvalid && bInvalid) return 0;
+      if (aInvalid) return -1;
+      if (bInvalid) return 1;
+      return new Date(a).getTime() - new Date(b).getTime();
     },
   },
   {
@@ -118,14 +127,39 @@ const columns: TacticalColumn[] = [
     align: "left",
     label: "Size",
     field: "size",
-    sortable: false,
+    sortable: true,
+    sort: (a: string, b: string) => {
+      const parseSize = (val: string): number => {
+        if (!val) return 0;
+        const num = parseFloat(val);
+        if (isNaN(num)) return 0;
+        const upper = val.toUpperCase();
+        if (upper.includes("GB")) return num * 1024;
+        if (upper.includes("KB")) return num / 1024;
+        return num;
+      };
+      return parseSize(a) - parseSize(b);
+    },
   },
   {
     name: "version",
     align: "left",
     label: "Version",
     field: "version",
-    sortable: false,
+    sortable: true,
+    sort: (a: string, b: string) => {
+      if (!a && !b) return 0;
+      if (!a) return -1;
+      if (!b) return 1;
+      const aParts = a.split(".").map((p) => parseInt(p) || 0);
+      const bParts = b.split(".").map((p) => parseInt(p) || 0);
+      const len = Math.max(aParts.length, bParts.length);
+      for (let i = 0; i < len; i++) {
+        const diff = (aParts[i] || 0) - (bParts[i] || 0);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    },
   },
   {
     name: "uninstall",
