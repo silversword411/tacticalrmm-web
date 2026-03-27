@@ -183,7 +183,7 @@ const columns: TacticalColumn[] = [
 const pagination = ref({
   rowsPerPage: 0,
   sortBy: "name",
-  descending: true,
+  descending: false,
 });
 
 const $q = useQuasar();
