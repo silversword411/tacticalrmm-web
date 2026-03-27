@@ -5,7 +5,8 @@ import { useAuthStore } from "src/core/dashboard/api";
 import { Notify } from "quasar";
 
 export function getWSUrl(path: string, token: string | null) {
-  const url = getBaseUrl().split("://")[1];
+  const base = getBaseUrl();
+  const url = base ? base.split("://")[1] : window.location.host;
 
   const proto = process.env.NODE_ENV === "production" || process.env.DOCKER_BUILD ? "wss" : "ws";
   return `${proto}://${url}/ws/${path}/?access_token=${token}`;
