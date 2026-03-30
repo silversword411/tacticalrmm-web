@@ -110,11 +110,17 @@ function filterFn(val: string, update: (callback: () => void) => void) {
             : false)
         );
       }
+
+      // fallback for plain { label, value } objects
+      if ("label" in option && typeof option.label === "string") {
+        return option.label.toLowerCase().indexOf(needle) > -1;
+      }
+
       return false;
     });
 
     displayedOptions.value = tempOptions?.filter((option, index, arr) => {
-      if (typeof option === "string" || isSelectableOption(option)) {
+      if (typeof option === "string" || isSelectableOption(option) || !("type" in option)) {
         return true;
       }
 

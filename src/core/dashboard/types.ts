@@ -16,14 +16,16 @@ export interface HeaderOption extends BaseOption {
   type: "header";
 }
 
-export type Option = SelectableOption | HeaderOption;
+export type PlainOption = BaseOption;
+
+export type Option = SelectableOption | HeaderOption | PlainOption;
 
 export function isSelectableOption(option: Option): option is SelectableOption {
-  return option.type === "option";
+  return "type" in option && option.type === "option";
 }
 
 export function isHeaderOption(option: Option): option is HeaderOption {
-  return option.type === "header";
+  return "type" in option && option.type === "header";
 }
 
 export interface ClientTreeNode {

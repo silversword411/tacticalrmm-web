@@ -84,10 +84,12 @@ const reportTemplate = ref<number | null>(null);
 const reportFormat = ref<ReportFormat>("pdf");
 
 const reportTemplateOptions = computed(() =>
-  reportTemplates.value.map((template) => ({
-    label: template.name,
-    value: template.id,
-  })),
+  reportTemplates.value
+    .map((template) => ({
+      label: template.name,
+      value: template.id,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label)),
 );
 
 const selectedTemplate = computed(() => {
