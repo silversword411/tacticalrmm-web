@@ -411,8 +411,9 @@ function createURLActionStore() {
 
 // api requests that don't interact with the store data
 export async function runURLAction(actionId: number, model: string, modelId: number | string) {
+  const key = model === "agent" ? "agent_id" : model;
   return await axios
-    .patch<string>("/core/urlaction/run/", { [model]: modelId, action: actionId })
+    .patch<string>("/core/urlaction/run/", { [key]: modelId, action: actionId })
     .then(({ data }) => {
       openURL(data);
     });
