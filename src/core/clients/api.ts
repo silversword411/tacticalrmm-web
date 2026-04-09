@@ -12,6 +12,17 @@ import type {
   Deployment,
 } from "./types";
 
+interface UpdateClientPayload {
+  client: Partial<Client>;
+  site?: Partial<Site>;
+  custom_fields?: ClientCustomFieldValue[];
+}
+
+interface UpdateSitePayload {
+  site: Partial<Site>;
+  custom_fields?: SiteCustomFieldValue[];
+}
+
 // Lazy singletons
 let clientStoreInstance: ReturnType<typeof createClientStore> | null = null;
 let siteStoreInstance: ReturnType<typeof createSiteStore> | null = null;
@@ -97,15 +108,17 @@ function createClientStore() {
     }
   }
 
-  async function updateClient(id: number, payload: Partial<Client>) {
+  async function updateClient(id: number, payload: UpdateClientPayload) {
     isLoading.value = true;
     isError.value = false;
     try {
-      const { data } = await axios.patch<Client>(`/clients/${id}/`, payload);
+      const { data } = await axios.put<Client>(`/clients/${id}/`, payload);
       const index = clients.value.findIndex((client: Client) => client.id === id);
       if (index !== -1) {
         clients.value[index] = data;
       }
+
+      dashboardStore.refreshDashboard();
       notifySuccess("Client was modified successfully");
     } catch (e) {
       isError.value = true;
@@ -219,16 +232,19 @@ function createSiteStore() {
     }
   }
 
-  async function updateSite(id: number, payload: Partial<Site>) {
+  async function updateSite(id: number, payload: UpdateSitePayload) {
     isLoading.value = true;
     isError.value = false;
     try {
-      const { data } = await axios.patch<Site>(`/clients/sites/${id}/`, payload);
+      const { data } = await axios.put<Site>(`/clients/sites/${id}/`, payload);
       // add to this site store
       const index = sites.value.findIndex((site) => site.id === id);
       if (index !== -1) {
         sites.value[index] = data;
       }
+
+      // reload clients tree so dashboard reflects the change
+      dashboardStore.refreshDashboard();
 
       notifySuccess("Site was modified successfully");
     } catch (e) {

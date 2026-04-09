@@ -77,9 +77,9 @@ async function submit() {
     // selectedTemplate.value can be null to clear the alert template
     const payload = { alert_template: selectedTemplate.value };
     if (props.type === "client") {
-      await updateClient(props.object.id, payload);
+      await updateClient(props.object.id, { client: payload });
     } else if (props.type === "site") {
-      await updateSite(props.object.id, payload);
+      await updateSite(props.object.id, { site: payload });
     } else if (props.type === "policy") {
       await updatePolicy(props.object.id, payload);
     }

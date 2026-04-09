@@ -131,14 +131,14 @@ async function submit() {
         server_policy: form.selectedServerPolicy,
         workstation_policy: form.selectedWorkstationPolicy,
       };
-      await updateClient(props.object.id, payload);
+      await updateClient(props.object.id, { client: payload });
     } else if (props.type === "site") {
       const payload: Partial<Site> = {
         block_policy_inheritance: form.blockInheritance,
         server_policy: form.selectedServerPolicy,
         workstation_policy: form.selectedWorkstationPolicy,
       };
-      await updateSite(props.object.id, payload);
+      await updateSite(props.object.id, { site: payload });
     } else if (props.type === "agent") {
       const payload: Partial<Agent> = {
         block_policy_inheritance: form.blockInheritance,

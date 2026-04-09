@@ -209,7 +209,7 @@ function createAgentStore() {
     isError.value = false;
 
     try {
-      const { data } = await axios.patch<Agent>(`/agents/${agentId}/`, payload);
+      const { data } = await axios.put<Agent>(`/agents/${agentId}/`, payload);
 
       const index = agents.value.findIndex((agent) => agent.agent_id === agentId);
       if (index !== -1) {
