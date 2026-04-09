@@ -620,7 +620,7 @@ const categories = computed(() => {
       list.push(script.category);
     }
   });
-  return list;
+  return list.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 });
 
 const tree = computed<QTreeNode[]>(() => {

@@ -82,17 +82,20 @@
               multiple
               :readonly="readonly"
             />
-            <tactical-dropdown
+            <q-select
               v-model="script.category"
               filled
-              :options="categories"
+              dense
+              options-dense
+              :options="filteredCategories"
               use-input
               clearable
               new-value-mode="add-unique"
-              filterable
+              input-debounce="0"
               label="Category"
               :readonly="readonly"
               hide-bottom-space
+              @filter="filterCategories"
             />
             <chip-input
               v-model="script.args"
@@ -270,6 +273,22 @@ const { agentOptions, isLoading: agentLoading } = useAgentDropdown();
 
 const hosted = computed(() => dashboardSettings.hosted);
 const serverScriptsEnabled = computed(() => dashboardSettings.serverScriptsEnabled);
+
+// category filter logic
+const filteredCategories = ref<string[]>(props.categories ?? []);
+
+function filterCategories(val: string, update: (fn: () => void) => void) {
+  update(() => {
+    if (!val) {
+      filteredCategories.value = props.categories ?? [];
+    } else {
+      const needle = val.toLowerCase();
+      filteredCategories.value = (props.categories ?? []).filter((c) =>
+        c.toLowerCase().includes(needle),
+      );
+    }
+  });
+}
 
 // script form logic
 const script = props.script
