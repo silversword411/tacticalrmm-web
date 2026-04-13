@@ -31,7 +31,7 @@
           flat
           push
           icon="refresh"
-          @click="selectedAgentId && getAgentSoftware(selectedAgentId, { force: true })"
+          @click="selectedAgentId && refreshAgentSoftware(selectedAgentId)"
         />
         <q-btn
           icon="add"
@@ -76,7 +76,7 @@ import { useQuasar } from "quasar";
 import { useAgentSoftwareStore, useAgentStore, useDashboardStore } from "src/stores/api";
 
 const { selectedAgentPlatform, selectedAgentId, selectedAgentIds } = useAgentStore();
-const { agentSoftware, isLoading, getAgentSoftware } = useAgentSoftwareStore();
+const { agentSoftware, isLoading, getAgentSoftware, refreshAgentSoftware } = useAgentSoftwareStore();
 const { tabHeight } = useDashboardStore();
 
 // ui imports

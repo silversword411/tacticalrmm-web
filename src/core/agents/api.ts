@@ -769,6 +769,21 @@ function createAgentSoftwareStore() {
     duration: 30 * 1000,
   });
 
+  async function refreshAgentSoftware(agent_id: string) {
+    isLoading.value = true;
+    isError.value = false;
+
+    try {
+      await axios.put(`/software/${agent_id}/`);
+      getAgentSoftware(agent_id, { force: true });
+      notifySuccess("Software was successfully refreshed");
+    } catch {
+      isError.value = true;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   interface InstallSoftwareRequest {
     name: string;
   }
@@ -815,6 +830,7 @@ function createAgentSoftwareStore() {
     isLoading,
     isError,
     getAgentSoftware,
+    refreshAgentSoftware,
     installAgentSoftware,
     uninstallAgentSoftware,
   };
