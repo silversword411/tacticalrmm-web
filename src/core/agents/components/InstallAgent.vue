@@ -16,8 +16,10 @@
             map-options
             emit-value
             filterable
-            label="Site"
+            label="Site *"
             :options="siteOptions"
+            lazy-rules
+            :rules="[(val: number | null) => !!val || 'Please select a site']"
           />
         </q-card-section>
         <q-card-section>
