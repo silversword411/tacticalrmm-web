@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
-import { useRouter } from "vue-router";
 import axios from "axios";
+import { router } from "src/router";
 import { notifySuccess } from "src/utils/notify";
 import { useDashboardStore } from "src/core/dashboard/api";
 import { useCachedAction } from "../dashboard/composables";
@@ -59,7 +59,6 @@ function createClientStore() {
   const dashboardStore = useDashboardStore();
 
   function _getClients() {
-    const router = useRouter();
     isLoading.value = true;
     isError.value = false;
     axios

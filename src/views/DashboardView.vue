@@ -425,9 +425,10 @@ function runChecks(node: ClientTreeNode) {
 }
 
 function showToggleMaintenance(node: ClientTreeNode) {
+  const rawType = node.raw.split("|")[0];
   const data = {
     id: node.id,
-    type: node.raw.split("|")[0],
+    type: rawType === "client" ? "Client" : "Site",
     action: node.color !== "green",
   };
 
