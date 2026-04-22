@@ -75,9 +75,10 @@ const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 const { clientOptions } = useClientDropdown();
 
 // sites for logic
-const state = reactive({
-  client: props.client || undefined,
+const initialClient = props.site?.client ?? props.client;
+const state = reactive<{ name: string; client?: number }>({
   name: props.site ? props.site.name : "",
+  ...(initialClient !== undefined ? { client: initialClient } : {}),
 });
 
 async function submit() {
