@@ -2,15 +2,25 @@
   <q-page>
     <FileBar />
     <q-splitter
+      ref="vSplitter"
       :model-value="dashboardSettings.clientTreeSplitter"
       :style="{ height: `${$q.screen.height - 50 - 32}px` }"
       @update:model-value="(val: number) => setClientTreeSplitter(Math.floor(val))"
     >
+      <template #separator>
+        <div class="vsplitter-dblclick-target" @dblclick.prevent.stop="autoFitClientTree" />
+      </template>
+
       <template #before>
         <div v-if="!clientTree" class="q-pa-sm q-gutter-sm text-center" style="height: 30vh">
           <q-spinner size="40px" color="primary" />
         </div>
-        <div v-else class="q-pa-sm q-gutter-sm scroll" style="height: 85vh; overflow: initial">
+        <div
+          v-else
+          ref="treeContainer"
+          class="q-pa-sm q-gutter-sm scroll"
+          style="height: 85vh; overflow: initial"
+        >
           <q-list dense class="rounded-borders">
             <q-item
               v-ripple
@@ -21,7 +31,9 @@
               <q-item-section avatar>
                 <q-icon name="fas fa-home" />
               </q-item-section>
-              <q-item-section>All Clients</q-item-section>
+              <q-item-section>
+                <span class="client-tree-row-content">All Clients</span>
+              </q-item-section>
             </q-item>
             <q-tree
               ref="tree"
@@ -34,18 +46,20 @@
             >
               <template #default-header="props">
                 <div
-                  class="row items-center"
+                  class="row items-center no-wrap"
                   :class="{
                     'drag-drop-target': !props.node.children && dropTargetNode === props.node.raw,
-                    'drag-expand-target': props.node.children && expandTargetNode === props.node.raw,
+                    'drag-expand-target':
+                      props.node.children && expandTargetNode === props.node.raw,
                   }"
                   @dragenter.prevent="onTreeNodeDragEnter($event, props.node)"
                   @dragover.prevent="onTreeNodeDragOver($event, props.node)"
                   @dragleave="onTreeNodeDragLeave(props.node)"
                   @drop.prevent="onTreeNodeDrop($event, props.node)"
+                  @dblclick.prevent.stop="showEditModal(props.node)"
                 >
                   <q-icon :name="props.node.icon" :color="props.node.color" class="q-mr-sm" />
-                  <div>
+                  <div class="client-tree-row-content">
                     {{ props.node.label }}
                     <q-tooltip :delay="600">
                       ID: {{ props.node.id }}<br />
@@ -199,7 +213,7 @@
 
       <template #after>
         <q-splitter
-          v-model="innerModel"
+          v-model="dashboardSettings.agentTableSplitter"
           reverse
           unit="px"
           horizontal
@@ -207,7 +221,7 @@
           before-class="hide-scrollbar"
           separator-class="splitter-separator"
           emit-immediately
-          @update:model-value="setTableHeight(innerModel)"
+          @update:model-value="(val: number) => setTableHeight(val)"
         >
           <template #before>
             <AgentTable />
@@ -226,7 +240,7 @@
 
 <script lang="ts" setup>
 import { ref, computed, onMounted, useTemplateRef } from "vue";
-import { useQuasar, QTree } from "quasar";
+import { useQuasar, QTree, QSplitter } from "quasar";
 import {
   useDashboardStore,
   useClientStore,
@@ -269,10 +283,46 @@ const { updateAgent, refreshAgentSearch, agents, selectedAgentIds } = useAgentSt
 
 const $q = useQuasar();
 
-const innerModel = ref(($q.screen.height - 82) / 2);
 const dropTargetNode = ref<string | null>(null);
 const expandTargetNode = ref<string | null>(null);
 const tree = useTemplateRef<QTree>("tree");
+const vSplitter = useTemplateRef<QSplitter>("vSplitter");
+const treeContainer = useTemplateRef<HTMLDivElement>("treeContainer");
+
+function getClientTreeAutoFitPct() {
+  const splitterEl = (vSplitter.value as unknown as { $el: HTMLElement } | null)?.$el;
+  const containerEl = treeContainer.value;
+  if (!splitterEl || !containerEl) return null;
+
+  const splitterWidth = splitterEl.offsetWidth;
+  if (splitterWidth <= 0) return null;
+
+  // Apply nowrap + overflow:visible while measuring so long client/site names
+  // expose their natural width beyond the constrained panel.
+  containerEl.classList.add("measure-natural-width");
+  try {
+    void containerEl.offsetWidth; // force reflow
+    const containerRect = containerEl.getBoundingClientRect();
+    let maxRight = 0;
+    const rows = containerEl.querySelectorAll<HTMLElement>(".client-tree-row-content");
+    rows.forEach((row) => {
+      const right = row.getBoundingClientRect().right - containerRect.left;
+      if (right > maxRight) maxRight = right;
+    });
+
+    const paddingRight = parseFloat(window.getComputedStyle(containerEl).paddingRight) || 0;
+    const buffer = paddingRight + 7;
+    return Math.floor(Math.min(70, Math.max(10, ((maxRight + buffer) / splitterWidth) * 100)));
+  } finally {
+    containerEl.classList.remove("measure-natural-width");
+  }
+}
+
+function autoFitClientTree() {
+  const fitPct = getClientTreeAutoFitPct();
+  if (fitPct === null) return;
+  setClientTreeSplitter(fitPct);
+}
 let dragExpandTimer: ReturnType<typeof setTimeout> | null = null;
 
 function clearDragExpandTimer() {
@@ -534,7 +584,7 @@ function onTreeNodeDrop(event: DragEvent, node: ClientTreeNode) {
 onMounted(() => {
   getClients();
   getURLActions();
-  setTableHeight(innerModel.value);
+  setTableHeight(dashboardSettings.agentTableSplitter);
 });
 </script>
 
@@ -562,5 +612,33 @@ onMounted(() => {
 
 .body--dark .splitter-separator {
   background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.vsplitter-dblclick-target {
+  position: absolute;
+  top: 0;
+  left: 0;
+  inset: 0;
+  transform: none;
+  cursor: col-resize;
+}
+
+.client-tree-row-content,
+.client-tree-row-content * {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.measure-natural-width,
+.measure-natural-width * {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  max-width: none !important;
+  text-overflow: clip !important;
+}
+
+.measure-natural-width .client-tree-row-content {
+  width: max-content !important;
+  min-width: max-content !important;
 }
 </style>

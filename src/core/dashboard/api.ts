@@ -45,6 +45,7 @@ export interface DashboardSettings {
   defaultAgentTblTab: AgentTableTab;
   clientTreeSort: ClientTreeSort;
   clientTreeSplitter: Ref<number>;
+  agentTableSplitter: Ref<number>;
   dashPositiveColor: string;
   dashNegativeColor: string;
   dashWarningColor: string;
@@ -96,6 +97,7 @@ function createDashboardStore() {
     defaultAgentTblTab: "mixed",
     clientTreeSort: "alphafail",
     clientTreeSplitter: useStorage("clientTreeSplitter", 20),
+    agentTableSplitter: useStorage("agentTableSplitter", 300),
     dashPositiveColor: "positive",
     dashNegativeColor: "negative",
     dashWarningColor: "warning",
