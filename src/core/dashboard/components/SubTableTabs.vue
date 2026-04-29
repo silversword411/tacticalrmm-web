@@ -62,8 +62,13 @@
           icon="far fa-sticky-note"
           label="Notes"
         >
-          <q-badge v-if="agentNotes.length > 0" color="primary" floating style="right: -20px">
-            {{ agentNotes.length }}
+          <q-badge
+            v-if="agentNotes.length > 0"
+            color="primary"
+            floating
+            style="top: auto; right: auto; bottom: 4px; left: -6px"
+          >
+            {{ agentNotes.length > 99 ? "99+" : agentNotes.length }}
           </q-badge>
         </q-tab>
         <q-tab
