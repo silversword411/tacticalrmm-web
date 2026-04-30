@@ -1,6 +1,7 @@
 <template>
   <div class="q-pa-none q-pl-xs" style="height: 100%" @mousedown="onTableMousedown">
     <tactical-table
+      ref="agentTableRef"
       v-model:pagination="pagination"
       dense
       class="fit"
@@ -259,7 +260,7 @@
               : ''
           "
           @contextmenu.prevent="onContextMenu($event, props.row)"
-          @click="selectRow(props.row)"
+          @click="selectRow($event, props.row)"
           @dblclick="selectSingleRow(props.row)"
         >
           <q-td v-for="col in props.cols" :key="col.name" :props="props" :class="col.classes">
@@ -524,7 +525,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useStorage } from "@vueuse/core";
-import type { QMenu } from "quasar";
+import type { QMenu, QTable } from "quasar";
 import { useRoute } from "vue-router";
 import { useQuasar } from "quasar";
 import { useAgentStore, useDashboardStore } from "src/stores/api";
@@ -560,16 +561,22 @@ import type { TacticalColumn } from "src/core/dashboard/types";
 const $q = useQuasar();
 
 const contextMenuRef = ref<InstanceType<typeof QMenu> | null>(null);
+const agentTableRef = ref<QTable | null>(null);
 const contextAgent = ref<Agent | null>(null);
 const contextMenuEvent = ref<MouseEvent | null>(null);
 const quadrantMenuVisible = ref(false);
+const selectionAnchorId = ref<string | null>(null);
 
 function onTableMousedown() {
   contextMenuRef.value?.hide();
 }
 
 function onContextMenu(evt: MouseEvent, row: Agent) {
-  selectRow(row);
+  if (!selectedAgentIds.value.includes(row.agent_id)) {
+    selectRow(evt, row);
+  } else {
+    selectionAnchorId.value = row.agent_id;
+  }
   contextAgent.value = row;
   contextMenuEvent.value = evt;
 
@@ -895,14 +902,42 @@ const someSelected = computed(() =>
 function toggleSelectAll(selected: boolean) {
   if (selected) {
     selectedAgentIds.value = agents.value.map((a) => a.agent_id);
+    selectionAnchorId.value = selectedAgentIds.value.at(-1) ?? null;
   } else {
     selectedAgentIds.value = [];
+    selectionAnchorId.value = null;
   }
 }
 
-function selectRow(row: Agent) {
+function getVisibleRows(): Agent[] {
+  const rows = agentTableRef.value?.filteredSortedRows;
+  if (Array.isArray(rows)) return rows as Agent[];
+  return agents.value;
+}
+
+function selectRangeFromAnchor(targetAgentId: string) {
+  if (!selectionAnchorId.value) return false;
+
+  const visibleRows = getVisibleRows();
+  const anchorIndex = visibleRows.findIndex((row) => row.agent_id === selectionAnchorId.value);
+  const targetIndex = visibleRows.findIndex((row) => row.agent_id === targetAgentId);
+  if (anchorIndex === -1 || targetIndex === -1) return false;
+
+  const [start, end] = anchorIndex < targetIndex
+    ? [anchorIndex, targetIndex]
+    : [targetIndex, anchorIndex];
+  selectedAgentIds.value = visibleRows.slice(start, end + 1).map((row) => row.agent_id);
+  return true;
+}
+
+function selectRow(evt: MouseEvent, row: Agent) {
+  if (evt.shiftKey && selectRangeFromAnchor(row.agent_id)) {
+    return;
+  }
+
   // Single click clears selection and selects just this row
   selectedAgentIds.value = [row.agent_id];
+  selectionAnchorId.value = row.agent_id;
 }
 
 function toggleCheckbox(agentId: string, selected: boolean) {
@@ -910,14 +945,19 @@ function toggleCheckbox(agentId: string, selected: boolean) {
     if (!selectedAgentIds.value.includes(agentId)) {
       selectedAgentIds.value = [...selectedAgentIds.value, agentId];
     }
+    selectionAnchorId.value = agentId;
   } else {
     selectedAgentIds.value = selectedAgentIds.value.filter((id) => id !== agentId);
+    if (selectionAnchorId.value === agentId) {
+      selectionAnchorId.value = selectedAgentIds.value.at(-1) ?? null;
+    }
   }
 }
 
 async function selectSingleRow(row: Agent) {
   // Double-click selects only this row (clears other selections)
   selectedAgentIds.value = [row.agent_id];
+  selectionAnchorId.value = row.agent_id;
 
   // Then perform the configured double-click action
   switch (agentDblClickAction.value) {
