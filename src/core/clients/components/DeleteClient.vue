@@ -7,33 +7,38 @@
         <q-btn v-close-popup dense flat icon="close" />
       </q-bar>
       <q-form @submit="submit">
-        <q-card-section v-if="filteredSiteOptions.length === 0">
-          There are no valid sites to move agents to. Add another site and try again
-        </q-card-section>
-        <q-card-section v-if="filteredSiteOptions.length > 0">
-          <tactical-dropdown
-            v-model="site"
-            label="Site to move agents to"
-            filled
-            :options="filteredSiteOptions"
-            map-options
-            :rules="[
-              (val: number) => !!val || 'Select the site that the agents should be moved to',
-            ]"
-            hint="The client you are deleting has agents assigned to it. Select a Site below to move the agents to."
-            filterable
-          />
+        <template v-if="hasAgents">
+          <q-card-section v-if="filteredSiteOptions.length === 0">
+            There are no valid sites to move agents to. Add another site and try again
+          </q-card-section>
+          <q-card-section v-else>
+            <tactical-dropdown
+              v-model="site"
+              label="Site to move agents to"
+              filled
+              :options="filteredSiteOptions"
+              map-options
+              :rules="[
+                (val: number) => !!val || 'Select the site that the agents should be moved to',
+              ]"
+              :hint="`This ${type} has ${object.agent_count} ${object.agent_count === 1 ? 'agent' : 'agents'}. Select a site to move them to before deleting.`"
+              filterable
+            />
+          </q-card-section>
+        </template>
+        <q-card-section v-else>
+          Delete {{ type }} <strong>{{ object.name }}</strong>?
         </q-card-section>
         <q-card-actions align="right">
           <q-btn v-close-popup dense flat push label="Cancel" />
           <q-btn
             :loading="isLoading"
-            :disable="filteredSiteOptions.length === 0"
+            :disable="hasAgents && filteredSiteOptions.length === 0"
             dense
             flat
             push
-            label="Move"
-            color="primary"
+            :label="hasAgents ? 'Move & Delete' : 'Delete'"
+            color="negative"
             type="submit"
           />
         </q-card-actions>
@@ -72,6 +77,8 @@ const { siteOptions, isLoading } = useSiteDropdown();
 const $q = useQuasar();
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
+const hasAgents = computed(() => !!props.object.agent_count && props.object.agent_count > 0);
+
 // Remove the site being currently deleted or the client that is being deleted from the options
 const filteredSiteOptions = computed(() => {
   if (props.type === "client") {
@@ -88,30 +95,24 @@ const filteredSiteOptions = computed(() => {
 // delete client logic
 const site = ref(undefined);
 
+function doDelete() {
+  const action =
+    props.type === "client"
+      ? removeClient(props.object.id, site.value)
+      : removeSite(props.object.id, site.value);
+  action.then(() => onDialogOK()).catch(() => {});
+}
+
 function submit() {
-  $q.dialog({
-    title: "Are you sure?",
-    message: `Deleting ${props.type} ${props.object.name}. ${props.object.agent_count} agents will be moved to the selected site`,
-    cancel: true,
-    ok: { label: "Delete", color: "negative" },
-  }).onOk(() => {
-    if (props.type === "client") {
-      removeClient(props.object.id, site.value)
-        .then(() => {
-          onDialogOK();
-        })
-        .catch(() => {
-          //
-        });
-    } else {
-      removeSite(props.object.id, site.value)
-        .then(() => {
-          onDialogOK();
-        })
-        .catch(() => {
-          //
-        });
-    }
-  });
+  if (hasAgents.value) {
+    $q.dialog({
+      title: "Are you sure?",
+      message: `Deleting ${props.type} ${props.object.name}. ${props.object.agent_count} ${props.object.agent_count === 1 ? "agent" : "agents"} will be moved to the selected site.`,
+      cancel: true,
+      ok: { label: "Delete", color: "negative" },
+    }).onOk(doDelete);
+  } else {
+    doDelete();
+  }
 }
 </script>

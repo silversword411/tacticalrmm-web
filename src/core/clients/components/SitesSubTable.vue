@@ -92,10 +92,8 @@
 import { computed, onMounted } from "vue";
 import { useQuasar } from "quasar";
 import { useCustomFieldStore } from "src/stores/api";
-import { useSiteStore } from "src/stores/api";
 
 const { siteCustomFields, getCustomFields } = useCustomFieldStore();
-const { removeSite } = useSiteStore();
 
 // ui imports
 import SitesForm from "./SitesForm.vue";
@@ -169,22 +167,13 @@ const columns = computed<TacticalColumn[]>(() => {
 const $q = useQuasar();
 
 function showSiteDeleteModal(site: Site) {
-  if (site.agent_count && site.agent_count > 0) {
-    $q.dialog({
-      component: DeleteClient,
-      componentProps: {
-        object: site,
-        type: "site",
-      },
-    });
-  } else {
-    $q.dialog({
-      title: "Are you sure?",
-      message: `Delete site: ${site.name}.`,
-      cancel: true,
-      ok: { label: "Delete", color: "negative" },
-    }).onOk(() => void removeSite(site.id));
-  }
+  $q.dialog({
+    component: DeleteClient,
+    componentProps: {
+      object: site,
+      type: "site",
+    },
+  });
 }
 
 function showEditSite(site: Site) {

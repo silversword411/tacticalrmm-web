@@ -37,7 +37,25 @@
         <q-space />
 
         <template v-if="selectedAgentIds.length > 1">
-          <div class="text-subtitle2 q-mr-sm">{{ selectedAgentIds.length }} selected</div>
+          <q-btn
+            dense
+            flat
+            no-caps
+            class="q-mr-sm"
+            :label="`${selectedAgentIds.length} selected`"
+            icon-right="arrow_drop_down"
+          >
+            <q-menu>
+              <q-list dense style="min-width: 140px">
+                <q-item v-close-popup clickable @click="showMoveAgentsModal">
+                  <q-item-section side>
+                    <q-icon name="drive_file_move" />
+                  </q-item-section>
+                  <q-item-section>Move</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-btn>
           <q-btn dense flat icon="clear" size="sm" class="q-mr-md" @click="selectedAgentIds = []">
             <q-tooltip>Clear selection</q-tooltip>
           </q-btn>
@@ -553,6 +571,7 @@ import EditAgent from "./EditAgent.vue";
 import PendingActions from "src/core/logs/components/PendingActions.vue";
 import AgentActionMenu from "./AgentActionMenu.vue";
 import AgentQuadrantMenu from "./AgentQuadrantMenu.vue";
+import MoveAgentsDialog from "./MoveAgentsDialog.vue";
 
 // type imports
 import type { Agent, AgentSearchParams, AgentPagination, AgentMonitoringType } from "../types";
@@ -990,6 +1009,18 @@ function showPendingActionsModal(agent: Agent) {
     component: PendingActions,
     componentProps: {
       agent: agent,
+    },
+  });
+}
+
+function showMoveAgentsModal() {
+  const selectedAgents = agents.value.filter((agent) => selectedAgentIds.value.includes(agent.agent_id));
+  if (selectedAgents.length === 0) return;
+
+  $q.dialog({
+    component: MoveAgentsDialog,
+    componentProps: {
+      agents: selectedAgents,
     },
   });
 }

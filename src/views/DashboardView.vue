@@ -420,15 +420,23 @@ function showEditModal(node: ClientTreeNode) {
 }
 
 function showDeleteModal(node: ClientTreeNode) {
-  if (
-    (node.children && node.client?.agent_count && node.client?.agent_count > 0) ||
-    (!node.children && node.site?.agent_count && node.site?.agent_count > 0)
-  ) {
+  if (!node.children) {
     $q.dialog({
       component: DeleteClient,
       componentProps: {
-        object: node.children ? node.client : node.site,
-        type: node.children ? "client" : "site",
+        object: node.site,
+        type: "site",
+      },
+    }).onOk(() => (selectedClientSiteNode.value = null));
+    return;
+  }
+
+  if (node.children && node.client?.agent_count && node.client?.agent_count > 0) {
+    $q.dialog({
+      component: DeleteClient,
+      componentProps: {
+        object: node.client,
+        type: "client",
       },
     }).onOk(() => (selectedClientSiteNode.value = null));
   } else {
