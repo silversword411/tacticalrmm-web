@@ -70,7 +70,7 @@ a
   .q-table__top,
   .q-table__bottom,
   thead tr:first-child th
-    background-color: #1d1d1d
+    background-color: #2a2a2a
 
 .q-table--dense
   .q-table th,

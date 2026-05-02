@@ -12,6 +12,10 @@
       'column-bgcolor': !$q.dark.isActive && columnSelect,
       'sticky-header-right-column': columnSelect,
       'tbl-sticky': !columnSelect,
+      'col-lines': activeColumnLines && !$q.dark.isActive,
+      'col-lines-dark': activeColumnLines && $q.dark.isActive,
+      'col-shading': activeColumnShading && !$q.dark.isActive,
+      'col-shading-dark': activeColumnShading && $q.dark.isActive,
     }"
     v-bind="$attrs"
     @update:selected="$emit('update:selected', $event)"
@@ -23,7 +27,11 @@
     <template #header-cell-columnSelect>
       <q-th auto-width>
         <q-btn dense flat icon="more_horiz">
-          <q-menu>
+          <q-menu
+            anchor="center left"
+            self="center right"
+            :max-height="columnMenuMaxHeight"
+          >
             <div class="row items-center q-px-sm q-pt-xs q-pb-none">
               <span class="text-caption text-grey col">Drag to reorder</span>
               <q-btn flat dense size="xs" label="Reset" @click="resetColumns" />
@@ -53,6 +61,13 @@
                 </q-item>
               </template>
             </draggable>
+            <q-separator />
+            <div class="q-px-sm q-py-xs">
+              <q-checkbox v-model="activeColumnLines" label="Column lines" dense size="sm" />
+            </div>
+            <div class="q-px-sm q-pb-xs">
+              <q-checkbox v-model="activeColumnShading" label="Column shading" dense size="sm" />
+            </div>
           </q-menu>
         </q-btn>
       </q-th>
@@ -72,8 +87,11 @@ export default defineComponent({
 import { ref, computed, watch, useTemplateRef, provide } from "vue";
 import { useStorage } from "@vueuse/core";
 import draggable from "vuedraggable";
+import { useQuasar } from "quasar";
 import type { QTable, QTableProps } from "quasar";
 import { exportToCsv } from "src/utils/csv";
+
+const $q = useQuasar();
 
 const props = withDefaults(
   defineProps<{
@@ -82,8 +100,10 @@ const props = withDefaults(
     columnSelect?: boolean;
     storageKey?: string;
     selected?: unknown[];
+    columnLines?: boolean;
+    columnShading?: boolean;
   }>(),
-  { columnSelect: false, storageKey: "", selected: () => [] },
+  { columnSelect: false, storageKey: "", selected: () => [], columnLines: false, columnShading: false },
 );
 
 defineEmits<{
@@ -116,6 +136,14 @@ const storedNames = props.storageKey
 const storedOrder = props.storageKey
   ? useStorage<string[]>(`${props.storageKey}-column-order`, [])
   : ref<string[]>([]);
+
+const activeColumnLines = props.storageKey
+  ? useStorage<boolean>(`${props.storageKey}-col-lines`, props.columnLines)
+  : ref<boolean>(props.columnLines);
+
+const activeColumnShading = props.storageKey
+  ? useStorage<boolean>(`${props.storageKey}-col-shading`, props.columnShading)
+  : ref<boolean>(props.columnShading);
 
 const orderedReorderableColumns = computed(() => {
   const order = storedOrder.value;
@@ -181,9 +209,13 @@ function toggleColumnVisibility(name: string, checked: boolean) {
 function resetColumns() {
   storedOrder.value = [];
   storedNames.value = [];
+  activeColumnLines.value = props.columnLines;
+  activeColumnShading.value = props.columnShading;
 }
 
 const tacticalTable = useTemplateRef<QTable>("tacticalTable");
+
+const columnMenuMaxHeight = computed(() => `${Math.max(240, $q.screen.height - 8)}px`);
 
 function handleExportCsv() {
   if (!tacticalTable.value) {
@@ -252,4 +284,24 @@ defineExpose({
   tbody
     /* height of all previous header rows */
     scroll-margin-top: 48px
+
+.col-lines
+  td, th
+    border-right: 1px solid rgba(0, 0, 0, 0.12)
+  td:last-child, th:last-child
+    border-right: none
+
+.col-lines-dark
+  td, th
+    border-right: 1px solid rgba(255, 255, 255, 0.14)
+  td:last-child, th:last-child
+    border-right: none
+
+.col-shading
+  td:nth-child(even), th:nth-child(even)
+    background-color: rgba(0, 0, 0, 0.04)
+
+.col-shading-dark
+  td:nth-child(even), th:nth-child(even)
+    background-color: rgba(255, 255, 255, 0.05)
 </style>
