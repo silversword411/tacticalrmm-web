@@ -144,7 +144,7 @@ function createClientStore() {
     isLoading.value = true;
     isError.value = false;
     try {
-      await axios.delete(`/clients/${id}/`, { params: moveToSite ? { move_to_site: id } : {} });
+      await axios.delete(`/clients/${id}/`, { params: moveToSite ? { move_to_site: moveToSite } : {} });
       const index = clients.value.findIndex((client: Client) => client.id === id);
       if (index !== -1) {
         clients.value.splice(index, 1);

@@ -7,33 +7,39 @@
         <q-btn v-close-popup dense flat icon="close" />
       </q-bar>
       <q-form @submit="submit">
-        <template v-if="hasAgents">
-          <q-card-section v-if="filteredSiteOptions.length === 0">
-            There are no valid sites to move agents to. Add another site and try again
+        <q-inner-loading :showing="isFetchingCount" />
+        <template v-if="!isFetchingCount">
+          <q-card-section v-if="fetchError" class="text-negative">
+            Failed to verify agent count. Please close and try again.
           </q-card-section>
+          <template v-else-if="hasAgents">
+            <q-card-section v-if="!hasDestinationSites">
+              There are no valid sites to move agents to. Add another site and try again
+            </q-card-section>
+            <q-card-section v-else>
+              <tactical-dropdown
+                v-model="site"
+                label="Site to move agents to"
+                filled
+                :options="filteredSiteOptions"
+                map-options
+                :rules="[
+                  (val: number) => !!val || 'Select the site that the agents should be moved to',
+                ]"
+                :hint="`This ${type} has ${liveAgentCount} ${liveAgentCount === 1 ? 'agent' : 'agents'}. Select a site to move them to before deleting.`"
+                filterable
+              />
+            </q-card-section>
+          </template>
           <q-card-section v-else>
-            <tactical-dropdown
-              v-model="site"
-              label="Site to move agents to"
-              filled
-              :options="filteredSiteOptions"
-              map-options
-              :rules="[
-                (val: number) => !!val || 'Select the site that the agents should be moved to',
-              ]"
-              :hint="`This ${type} has ${object.agent_count} ${object.agent_count === 1 ? 'agent' : 'agents'}. Select a site to move them to before deleting.`"
-              filterable
-            />
+            Delete {{ type }} <strong>{{ object.name }}</strong>?
           </q-card-section>
         </template>
-        <q-card-section v-else>
-          Delete {{ type }} <strong>{{ object.name }}</strong>?
-        </q-card-section>
         <q-card-actions align="right">
           <q-btn v-close-popup dense flat push label="Cancel" />
           <q-btn
             :loading="isLoading"
-            :disable="hasAgents && filteredSiteOptions.length === 0"
+            :disable="isFetchingCount || fetchError || (hasAgents && !hasDestinationSites)"
             dense
             flat
             push
@@ -48,9 +54,9 @@
 </template>
 
 <script lang="ts" setup>
-// composition imports
-import { computed, ref } from "vue";
-import { useQuasar, useDialogPluginComponent } from "quasar";
+import { computed, ref, onMounted } from "vue";
+import axios from "axios";
+import { useDialogPluginComponent } from "quasar";
 import { useClientStore, useSiteStore } from "src/stores/api";
 
 const { removeClient } = useClientStore();
@@ -58,7 +64,6 @@ const { removeSite } = useSiteStore();
 import { useSiteDropdown } from "../composables";
 import { isHeaderOption } from "src/core/dashboard/types";
 
-// type imports
 import type { Client, Site } from "../types";
 
 const props = defineProps<{
@@ -68,18 +73,30 @@ const props = defineProps<{
 
 defineEmits(useDialogPluginComponent.emits);
 
-// setup stores
-
-// setup dropdowns
 const { siteOptions, isLoading } = useSiteDropdown();
-
-// setup quasar dialog
-const $q = useQuasar();
 const { dialogRef, onDialogOK, onDialogHide } = useDialogPluginComponent();
 
-const hasAgents = computed(() => !!props.object.agent_count && props.object.agent_count > 0);
+const liveAgentCount = ref<number>(props.object.agent_count ?? 0);
+const isFetchingCount = ref(true);
+const fetchError = ref(false);
 
-// Remove the site being currently deleted or the client that is being deleted from the options
+onMounted(async () => {
+  fetchError.value = false;
+  try {
+    const url = props.type === "client"
+      ? `/clients/${props.object.id}/`
+      : `/clients/sites/${props.object.id}/`;
+    const { data } = await axios.get<Client | Site>(url);
+    liveAgentCount.value = data.agent_count ?? 0;
+  } catch {
+    fetchError.value = true;
+  } finally {
+    isFetchingCount.value = false;
+  }
+});
+
+const hasAgents = computed(() => liveAgentCount.value > 0);
+
 const filteredSiteOptions = computed(() => {
   if (props.type === "client") {
     return siteOptions.value.filter((site) =>
@@ -92,7 +109,10 @@ const filteredSiteOptions = computed(() => {
   }
 });
 
-// delete client logic
+const hasDestinationSites = computed(() =>
+  filteredSiteOptions.value.some((opt) => !isHeaderOption(opt)),
+);
+
 const site = ref(undefined);
 
 function doDelete() {
@@ -104,15 +124,6 @@ function doDelete() {
 }
 
 function submit() {
-  if (hasAgents.value) {
-    $q.dialog({
-      title: "Are you sure?",
-      message: `Deleting ${props.type} ${props.object.name}. ${props.object.agent_count} ${props.object.agent_count === 1 ? "agent" : "agents"} will be moved to the selected site.`,
-      cancel: true,
-      ok: { label: "Delete", color: "negative" },
-    }).onOk(doDelete);
-  } else {
-    doDelete();
-  }
+  doDelete();
 }
 </script>

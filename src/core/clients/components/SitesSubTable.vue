@@ -106,10 +106,16 @@ import { useSiteDrag } from "../composables";
 
 const props = defineProps<{
   client: Client;
+  scrollEl?: HTMLElement | null;
+  collapseAll?: () => (() => void);
 }>();
 
 // drag source wiring
-const { onSiteDragStart, onSiteDragEnd } = useSiteDrag();
+const { onSiteDragStart: _onSiteDragStart, onSiteDragEnd } = useSiteDrag();
+
+function onSiteDragStart(siteId: number, ev: DragEvent) {
+  _onSiteDragStart(siteId, ev, { scrollEl: props.scrollEl, collapseAll: props.collapseAll });
+}
 
 const sites = computed(() => props.client.sites ?? []);
 
@@ -133,7 +139,6 @@ const columns = computed<TacticalColumn[]>(() => {
       field: "block_policy_inheritance",
       align: "left",
       sortable: true,
-      hiddenByDefault: true,
     },
     {
       name: "maintenance_mode",
@@ -141,7 +146,6 @@ const columns = computed<TacticalColumn[]>(() => {
       field: "maintenance_mode",
       align: "left",
       sortable: true,
-      hiddenByDefault: true,
     },
   ];
 

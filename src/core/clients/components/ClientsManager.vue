@@ -14,6 +14,7 @@
         <q-btn v-close-popup dense flat icon="close" />
       </q-bar>
       <tactical-table
+        ref="tableRef"
         :rows="clients"
         :columns="columns"
         style="max-height: 70vh"
@@ -24,14 +25,27 @@
         :rows-per-page-options="[0]"
         no-data-label="No Clients"
         :loading="isLoading"
-        :filter="search"
+        :filter="debouncedSearch"
+        :filter-method="filterClients"
         column-select
+        column-shading
         storage-key="clients-manager"
       >
         <!-- top slot -->
         <template #top>
           <q-btn label="New" dense flat push no-caps icon="add" @click="showAddClient" />
           <q-space />
+          <q-btn
+            dense
+            flat
+            push
+            no-caps
+            :icon="expanded.size > 0 ? 'unfold_less' : 'unfold_more'"
+            :label="expanded.size > 0 ? 'Collapse All' : 'Expand All'"
+            :title="expanded.size > 0 ? 'Collapse all clients' : 'Expand all clients'"
+            class="q-mr-sm"
+            @click="expanded.size > 0 ? collapseAll() : expandAll()"
+          />
           <q-input
             v-model="search"
             filled
@@ -136,7 +150,11 @@
           <!-- expanded sub-row with sites table -->
           <q-tr v-if="isExpanded(bodyProps.row.id)" :props="bodyProps" no-hover>
             <q-td :colspan="bodyProps.cols.length + 1" class="q-pa-md sites-subtable-cell">
-              <SitesSubTable :client="bodyProps.row" />
+              <SitesSubTable
+                :client="bodyProps.row"
+                :scroll-el="scrollEl"
+                :collapse-all="collapseAll"
+              />
             </q-td>
           </q-tr>
         </template>
@@ -146,8 +164,8 @@
           <q-tr class="text-weight-medium">
             <q-td v-for="col in bottomProps.cols" :key="col.name" :class="`text-${col.align}`">
               <template v-if="col.name === 'name'">
-                Totals ({{ clients.length }}
-                {{ clients.length === 1 ? "client" : "clients" }})
+                Totals ({{ filteredClients.length }}
+                {{ filteredClients.length === 1 ? "client" : "clients" }})
               </template>
               <template v-else-if="col.name === 'site_count'">
                 {{ totalSites }}
@@ -165,12 +183,19 @@
 
 <script lang="ts" setup>
 // composition imports
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { refDebounced } from "@vueuse/core";
 import { useQuasar, useDialogPluginComponent } from "quasar";
 import { useClientStore, useCustomFieldStore } from "src/stores/api";
 import { useSiteDrag } from "../composables";
 
-const { clients, isLoading, getClients, removeClient } = useClientStore();
+// ref to the tactical-table component; derive the scrollable inner element for auto-scroll.
+const tableRef = ref<{ $el: HTMLElement } | null>(null);
+const scrollEl = computed<HTMLElement | null>(
+  () => tableRef.value?.$el.querySelector(".q-table__middle") ?? null,
+);
+
+const { clients, isLoading, getClients } = useClientStore();
 const { clientCustomFields, getCustomFields } = useCustomFieldStore();
 
 // ui imports
@@ -191,6 +216,14 @@ function toggleExpanded(id: number) {
   if (next.has(id)) next.delete(id);
   else next.add(id);
   expanded.value = next;
+}
+function collapseAll(): () => void {
+  const snapshot = new Set(expanded.value);
+  expanded.value = new Set();
+  return () => { expanded.value = new Set(snapshot); };
+}
+function expandAll() {
+  expanded.value = new Set(clients.value.map((c) => c.id));
 }
 
 // drag-drop target wiring
@@ -235,7 +268,6 @@ const columns = computed<TacticalColumn[]>(() => {
       field: "block_policy_inheritance",
       align: "left",
       sortable: true,
-      hiddenByDefault: true,
     },
     {
       name: "maintenance_mode",
@@ -243,7 +275,6 @@ const columns = computed<TacticalColumn[]>(() => {
       field: "maintenance_mode",
       align: "left",
       sortable: true,
-      hiddenByDefault: true,
     },
   ];
 
@@ -265,12 +296,13 @@ const columns = computed<TacticalColumn[]>(() => {
   return [...base, ...cfCols];
 });
 
-// totals
+// totals (reflect active search filter)
+const filteredClients = computed(() => filterClients(clients.value, debouncedSearch.value));
 const totalSites = computed(() =>
-  clients.value.reduce((n, c) => n + (c.sites?.length ?? 0), 0),
+  filteredClients.value.reduce((n, c) => n + (c.sites?.length ?? 0), 0),
 );
 const totalAgents = computed(() =>
-  clients.value.reduce((n, c) => n + (c.agent_count ?? 0), 0),
+  filteredClients.value.reduce((n, c) => n + (c.agent_count ?? 0), 0),
 );
 
 defineEmits(useDialogPluginComponent.emits);
@@ -280,27 +312,50 @@ const $q = useQuasar();
 const { dialogRef, onDialogHide } = useDialogPluginComponent();
 
 const search = ref("");
+const debouncedSearch = refDebounced(search, 300);
+
+function filterClients(rows: readonly Client[], terms: string | null): Client[] {
+  const needle = String(terms ?? "").trim().toLowerCase();
+  if (!needle) return rows as Client[];
+
+  return (rows as Client[]).filter((client) => {
+    const clientMatch = client.name.toLowerCase().includes(needle);
+    const siteMatch = client.sites?.some((s) => s.name.toLowerCase().includes(needle)) ?? false;
+    return clientMatch || siteMatch;
+  });
+}
+
+watch(debouncedSearch, (terms: string) => {
+  const needle = String(terms ?? "").trim().toLowerCase();
+  if (!needle) return;
+
+  const toExpand = clients.value.filter(
+    (client) =>
+      !client.name.toLowerCase().includes(needle) &&
+      (client.sites?.some((s) => s.name.toLowerCase().includes(needle)) ?? false),
+  );
+
+  if (toExpand.length === 0) return;
+
+  const next = new Set(expanded.value);
+  let changed = false;
+  for (const client of toExpand) {
+    if (!next.has(client.id)) {
+      next.add(client.id);
+      changed = true;
+    }
+  }
+  if (changed) expanded.value = next;
+});
 
 function showClientDeleteModal(client: Client) {
-  // agents are still assigned to client. Need to open modal to select which site to move to
-  if (client.agent_count && client.agent_count > 0) {
-    $q.dialog({
-      component: DeleteClient,
-      componentProps: {
-        object: client,
-        type: "client",
-      },
-    });
-
-    // can delete the client since there are no agents
-  } else {
-    $q.dialog({
-      title: "Are you sure?",
-      message: `Delete client: ${client.name}.`,
-      cancel: true,
-      ok: { label: "Delete", color: "negative" },
-    }).onOk(() => void removeClient(client.id));
-  }
+  $q.dialog({
+    component: DeleteClient,
+    componentProps: {
+      object: client,
+      type: "client",
+    },
+  });
 }
 
 function showEditClient(client: Client) {
@@ -328,7 +383,7 @@ function showAddSite(client: Client) {
 }
 
 onMounted(() => {
-  getClients();
+  getClients({ force: true });
   getCustomFields();
 });
 </script>
@@ -340,11 +395,8 @@ onMounted(() => {
   outline-offset: -2px
 
 .sites-subtable-cell
-  background-color: #c8d4e3
   border-left: 4px solid #1976d2
   padding-left: 32px !important
-  :deep(.q-table)
-    background-color: #e1e8f1
   :deep(.q-table tbody tr:hover > td)
     background-color: #d3dbe6
   :deep(.q-table__top)
@@ -352,10 +404,7 @@ onMounted(() => {
     padding-bottom: 4px
 
 body.body--dark .sites-subtable-cell
-  background-color: #2a313c
   border-left-color: #1976d2
-  :deep(.q-table)
-    background-color: #353d4b
   :deep(.q-table tbody tr:hover > td)
     background-color: #404958
 </style>

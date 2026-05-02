@@ -103,7 +103,8 @@ async function moveAgents() {
       movableAgents.value.map((agent) => updateAgent(agent.agent_id, { site: destinationSiteId.value! })),
     );
     refreshAgentSearch();
-    getClients();
+    // TODO: replace with a single bulk-move API call once backend supports it
+    getClients({ force: true }); // bypass 1-min cache so counts update immediately
     onDialogOK();
   } catch {
     // Errors are handled by existing axios interceptors and store methods.

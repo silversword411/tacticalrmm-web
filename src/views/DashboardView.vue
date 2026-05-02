@@ -244,14 +244,12 @@ import { useQuasar, QTree, QSplitter } from "quasar";
 import {
   useDashboardStore,
   useClientStore,
-  useSiteStore,
   useURLActionStore,
   runURLAction,
   useAgentStore,
 } from "src/stores/api";
 
-const { clients, removeClient, getClients } = useClientStore();
-const { removeSite } = useSiteStore();
+const { clients, getClients } = useClientStore();
 const { webActions, getURLActions } = useURLActionStore();
 import axios from "axios";
 
@@ -431,26 +429,13 @@ function showDeleteModal(node: ClientTreeNode) {
     return;
   }
 
-  if (node.children && node.client?.agent_count && node.client?.agent_count > 0) {
-    $q.dialog({
-      component: DeleteClient,
-      componentProps: {
-        object: node.client,
-        type: "client",
-      },
-    }).onOk(() => (selectedClientSiteNode.value = null));
-  } else {
-    $q.dialog({
-      title: "Are you sure?",
-      message: `Delete ${node.children ? "client" : "site"}: ${node.label}.`,
-      cancel: true,
-      ok: { label: "Delete", color: "negative" },
-    }).onOk(() => {
-      if (node.children) void removeClient(node.id);
-      else void removeSite(node.id);
-      selectedClientSiteNode.value = null;
-    });
-  }
+  $q.dialog({
+    component: DeleteClient,
+    componentProps: {
+      object: node.client,
+      type: "client",
+    },
+  }).onOk(() => (selectedClientSiteNode.value = null));
 }
 
 function showInstallAgent(node: ClientTreeNode) {
@@ -581,7 +566,7 @@ function onTreeNodeDrop(event: DragEvent, node: ClientTreeNode) {
       try {
         await Promise.all(agentsToMove.map((a) => updateAgent(a.agent_id, { site: targetSiteId })));
         refreshAgentSearch();
-        getClients();
+        getClients({ force: true });
       } catch {
         // updateAgent handles error notification internally
       }
