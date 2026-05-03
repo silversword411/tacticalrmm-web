@@ -103,7 +103,8 @@ function createCoreStore() {
 
     try {
       const { data } = await axios.put<CoreSettings>("/core/settings/", settings);
-      coreSettings.value = data;
+      if (coreSettings.value) Object.assign(coreSettings.value, data);
+      else coreSettings.value = data;
       notifySuccess("Core Settings updated successfully.");
 
       if (emailTest) {
