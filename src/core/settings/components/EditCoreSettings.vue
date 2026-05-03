@@ -76,9 +76,9 @@
                   <div v-if="!hosted" class="row items-center q-py-xs">
                     <q-checkbox
                       v-model="coreSettings.enable_server_webterminal"
-                      label="Enable web terminal"
+                      label="Enable Server Web Terminal"
                     >
-                      <q-tooltip>Enable the web terminal</q-tooltip>
+                      <q-tooltip>Enable the Server Web Terminal</q-tooltip>
                     </q-checkbox>
                     <q-btn
                       size="sm"

@@ -125,6 +125,10 @@
               <q-item v-close-popup clickable @click="bulkRecoverAgents">
                 <q-item-section>Recover All Agents</q-item-section>
               </q-item>
+              <!-- web terminal -->
+              <q-item v-if="!hosted" v-close-popup clickable @click="openWebTerm">
+                <q-item-section>Server Web Terminal</q-item-section>
+              </q-item>
             </q-list>
           </q-menu>
         </q-btn>
@@ -203,11 +207,12 @@
 import { computed } from "vue";
 import { useQuasar } from "quasar";
 import { useAgentStore, useCoreStore, useDashboardStore } from "src/stores/api";
+import { checkWebTermPerms, openWebTerminal } from "src/core/settings/api";
+import { notifyWarning, notifyError } from "src/utils/notify";
 
 const { bulkAgentRecovery } = useAgentStore();
 const { clearCache } = useCoreStore();
 const { dashboardSettings } = useDashboardStore();
-import { notifyWarning } from "src/utils/notify";
 
 // ui imports
 import DialogWrapper from "src/core/dashboard/ui/DialogWrapper.vue";
@@ -384,5 +389,17 @@ function showEditCoreSettings() {
   $q.dialog({
     component: EditCoreSettings,
   });
+}
+async function openWebTerm() {
+  try {
+    const { message, status } = await checkWebTermPerms();
+    if (status === 412) {
+      notifyError(message);
+    } else {
+      openWebTerminal();
+    }
+  } catch (e) {
+    console.error(e);
+  }
 }
 </script>

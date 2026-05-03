@@ -1,11 +1,7 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-grey-9 text-white">
-      <q-banner
-        v-if="reloadNeeded"
-        inline-actions
-        class="bg-red text-white text-center"
-      >
+      <q-banner v-if="reloadNeeded" inline-actions class="bg-red text-white text-center">
         You are viewing an outdated version of this page.
         <q-btn color="dark" icon="refresh" label="Refresh" @click="reload" />
       </q-banner>
@@ -109,7 +105,11 @@
           class="q-mr-sm"
           style="font-size: 16px"
           @click="openWebTerm"
-        />
+        >
+          <q-tooltip :delay="600" anchor="bottom middle" self="top middle"
+            >Server Web Terminal</q-tooltip
+          >
+        </q-btn>
         <!-- Devices Chip -->
         <q-chip class="cursor-pointer">
           <q-avatar size="md" icon="devices" color="primary" />
