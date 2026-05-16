@@ -72,9 +72,12 @@
 
               <q-card-section>
                 <q-input
+                  id="totp"
                   v-model="twofactor"
                   autofocus
                   filled
+                  name="totp"
+                  inputmode="numeric"
                   autocomplete="one-time-code"
                   :rules="[(val) => (val && val.length > 0) || 'This field is required']"
                 />
