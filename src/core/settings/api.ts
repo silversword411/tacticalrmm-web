@@ -617,7 +617,7 @@ function createCodeSignStore() {
     axios
       .get("/core/codesign/")
       .then(({ data }) => {
-        token.value = data;
+        token.value = data?.token ?? null;
       })
       .catch(() => {
         isError.value = true;
