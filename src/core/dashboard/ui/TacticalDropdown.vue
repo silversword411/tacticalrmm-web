@@ -10,6 +10,7 @@
     :use-chips="multiple"
     :use-input="filterable"
     :hide-selected="!multiple && (focused || filtered)"
+    :option-disable="(opt: Option | string) => typeof opt === 'object' && isHeaderOption(opt)"
     v-bind="$attrs"
     @[filterEvent]="filterFn"
     @popup-show="focused = true"
