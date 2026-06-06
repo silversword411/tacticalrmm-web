@@ -6,7 +6,7 @@
       :tips="[
         { key: 'Enter', text: 'to add' },
         { key: 'Paste', text: 'multiple lines to bulk add' },
-        { key: 'Click', text: 'a chip to edit' },
+        { key: 'Click', text: 'a chip to edit, Enter to save' },
         { key: 'Drag', text: 'the grip icon to reorder' },
         { key: 'Backspace', text: 'when empty removes last' },
       ]"
@@ -32,7 +32,7 @@
         />
       </template>
       <template #control>
-      <div class="chip-input__container" @click="focusInput">
+      <div class="chip-input__container" @click="onContainerClick" @mousedown="onContainerMousedown">
         <draggable
           v-model="items"
           item-key="index"
@@ -47,6 +47,7 @@
               <q-chip
                 v-if="editingIndex === index"
                 dense
+                :ripple="false"
                 class="chip-input__chip chip-input__chip--editing"
               >
                 <input
@@ -55,8 +56,7 @@
                   class="chip-input__edit-input"
                   :size="Math.max(editValue.length, 1)"
                   @keydown.enter.prevent="saveEdit(index)"
-                  @keydown.escape.prevent="cancelEdit"
-                  @blur="saveEdit(index)"
+                  @keydown.escape.prevent.stop="cancelEdit"
                 />
               </q-chip>
 
@@ -133,6 +133,23 @@ function sortItems() {
 
 function focusInput() {
   inputRef.value?.focus();
+}
+
+function onContainerClick(e: MouseEvent) {
+  if (editingIndex.value !== null) {
+    e.stopPropagation();
+    return;
+  }
+  focusInput();
+}
+
+function onContainerMousedown(e: MouseEvent) {
+  if (editingIndex.value !== null) {
+    e.stopPropagation();
+    if (!(e.target instanceof HTMLInputElement)) {
+      e.preventDefault();
+    }
+  }
 }
 
 function addValue() {
