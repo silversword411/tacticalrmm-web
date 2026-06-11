@@ -149,7 +149,7 @@ function createUserStore() {
     isError.value = false;
 
     try {
-      await axios.put("/accounts/users/reset/", { id, password });
+      await axios.post("/accounts/users/reset/", { id, password });
       notifySuccess("Password was reset successfully");
     } catch (e) {
       isError.value = true;
@@ -179,7 +179,7 @@ function createUserStore() {
     isError.value = false;
 
     try {
-      await axios.put("/accounts/users/reset2fa/", user);
+      await axios.put("/accounts/users/reset_totp/", { id: user.id });
       notifySuccess(`MFA authentication was reset successfully for ${user.username}`);
     } catch (e) {
       isError.value = true;

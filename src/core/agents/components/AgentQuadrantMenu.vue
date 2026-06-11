@@ -362,7 +362,7 @@ function onPointerdown(e: PointerEvent) {
 }
 
 onMounted(() => {
-  getURLActions();
+  void getURLActions();
   document.addEventListener("keydown", onKeydown);
   window.addEventListener("pointerdown", onPointerdown, true);
   void adjustPosition();

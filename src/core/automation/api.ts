@@ -428,19 +428,6 @@ function createPatchPolicyStore() {
   const isLoading = ref(false);
   const isError = ref(false);
 
-  async function getPatchPolicy(id: number) {
-    isLoading.value = true;
-    isError.value = false;
-    try {
-      const { data } = await axios.get<WinPatchPolicy>(`/automation/patchpolicy/${id}/`);
-      return data;
-    } catch {
-      isError.value = true;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
   async function addPatchPolicy(policy: WinPatchPolicy) {
     isLoading.value = true;
     isError.value = false;
@@ -521,7 +508,6 @@ function createPatchPolicyStore() {
   return {
     isLoading,
     isError,
-    getPatchPolicy,
     addPatchPolicy,
     updatePatchPolicy,
     deletePatchPolicy,

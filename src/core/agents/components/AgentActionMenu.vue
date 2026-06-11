@@ -265,6 +265,6 @@ const {
 } = useAgentActions();
 
 onMounted(() => {
-  getURLActions();
+  void getURLActions();
 });
 </script>

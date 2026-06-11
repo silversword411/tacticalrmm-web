@@ -815,7 +815,7 @@ function createAgentSoftwareStore() {
     isError.value = false;
 
     try {
-      await axios.delete<string>(`/software/${agent_id}/`, { data: payload });
+      await axios.post<string>(`/software/${agent_id}/uninstall/`, payload);
       notifySuccess("Uninstall command was sent successfully");
     } catch (e) {
       isError.value = true;
